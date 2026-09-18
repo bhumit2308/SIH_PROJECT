@@ -4,6 +4,8 @@
 .env.production
 .env.development
 !.env.example
+credentials.json
+*.credentials.json
 
 # Local SQLite databases
 *.db

@@ -4,16 +4,18 @@
 
 ---
 
-## 👥 Demo Credentials (Ready to Log In)
+## 👥 Demo Accounts (Configured in Supabase Auth)
 
-The demo users are pre-configured in Supabase Auth & seeded in the database:
+The following role-based accounts are pre-configured:
 
-| Role | Email | Password | Access Level |
-|---|---|---|---|
-| **Inspector** | `inspector@metra.demo` | `DemoPassword123!` | Enforcement inspections, package photo uploads, case views |
-| **Supervisor** | `supervisor@metra.demo` | `DemoPassword123!` | Case sign-off, triage review queue, compliance certification |
-| **Manufacturer** | `manufacturer@metra.demo` | `DemoPassword123!` | Self-certification pre-screening, package compliance preview |
-| **Admin** | `admin@metra.demo` | `DemoPassword123!` | Statutory rule pack management, system diagnostics |
+| Role | Email | Access Level |
+|---|---|---|
+| **Inspector** | `inspector@metra.demo` | Enforcement inspections, package photo uploads, case views |
+| **Supervisor** | `supervisor@metra.demo` | Case sign-off, triage review queue, compliance certification |
+| **Manufacturer** | `manufacturer@metra.demo` | Self-certification pre-screening, package compliance preview |
+| **Admin** | `admin@metra.demo` | Statutory rule pack management, system diagnostics |
+
+*(Credentials for development are kept locally in `credentials.json`)*
 
 ---
 
