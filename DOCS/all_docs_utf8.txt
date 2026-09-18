@@ -1,0 +1,2125 @@
+﻿
+
+========== 00_METRA_Documentation_Index.docx ==========
+METRA ΓÇö Complete Project Documentation Index
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+Purpose
+This package contains 20 project documents for METRA, the SIH26034 solution. Use this index as the master navigation document; use the separate documents for detailed implementation work.
+#
+Document
+File
+1
+Project Brief
+01_Project_Brief.docx
+2
+Product Requirements Document
+02_PRD.docx
+3
+User Stories
+03_User_Stories.docx
+4
+UI/UX Specification
+04_UI_UX_Specification.docx
+5
+User/App Flow
+05_User_App_Flow.docx
+6
+Technical Requirements Document
+06_TRD.docx
+7
+System Architecture
+07_System_Architecture.docx
+8
+Database Schema
+08_Database_Schema.docx
+9
+Backend Architecture
+09_Backend_Architecture.docx
+10
+API Specification
+10_API_Specification.docx
+11
+Authentication & Authorization
+11_Authentication_Authorization.docx
+12
+Business Rules
+12_Business_Rules.docx
+13
+Data Dictionary
+13_Data_Dictionary.docx
+14
+Security Specification
+14_Security_Specification.docx
+15
+Implementation Plan
+15_Implementation_Plan.docx
+16
+Testing Strategy
+16_Testing_Strategy.docx
+17
+Test Cases
+17_Test_Cases.docx
+18
+Deployment Plan
+18_Deployment_Plan.docx
+19
+Environment Specification
+19_Environment_Specification.docx
+20
+Requirements Traceability Matrix
+20_Requirements_Traceability_Matrix.docx
+Project Source of Truth
+The documents intentionally use simple language but keep the architecture production-oriented. Regulatory logic must be maintained from current official Legal Metrology sources; the application must not treat the LLM as the legal source of truth.
+Reference sources
+Department of Consumer Affairs ΓÇö Legal Metrology overview: https://consumeraffairs.gov.in/pages/legal-metrology-overview
+Department of Consumer Affairs ΓÇö Legal Metrology Act and rules: https://consumeraffairs.gov.in/pages/legal-metrology-act
+India Code ΓÇö Legal Metrology Act, 2009: https://www.indiacode.nic.in/handle/123456789/2102
+Use the latest official rule/amendment documents maintained by the Department as the regulatory source of truth.
+
+
+========== 01_Project_Brief.docx ==========
+01. Project Brief
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Project Overview
+METRA helps inspectors check packaged commodities by scanning package images, extracting declarations with OCR/vision, applying the correct versioned compliance rules, linking findings to image evidence, routing uncertain cases to a human reviewer, and generating audit-ready reports.
+2. Problem
+Legal Metrology officers may need to inspect packaged products for mandatory declarations. Manual checking takes time, can be inconsistent, and makes large-scale inspection difficult.
+3. Goal
+Reduce repetitive inspection work.
+Make checks consistent and explainable.
+Keep image evidence with every finding.
+Support human officers instead of replacing them.
+Produce an audit-ready inspection record.
+4. Core Idea
+Package images ΓåÆ Quality check ΓåÆ OCR/Vision ΓåÆ Structured declarations ΓåÆ Applicable rule pack ΓåÆ Compliance checks ΓåÆ Evidence ΓåÆ Human review ΓåÆ Report/Dashboard
+5. Product Modes
+Mode
+Purpose
+Inspector Mode
+For official inspection and review workflows.
+Compliance Pre-Screening
+For manufacturers/packers/importers to find potential issues before release. It is not legal approval.
+6. MVP Scope
+Start with selected packaged consumer-product categories, not every category.
+Support multi-image capture (front/back/side).
+Extract core declarations such as name, manufacturer/packer/importer, net quantity, MRP, relevant date information, consumer-care details, and country of origin where applicable.
+Run versioned rule checks.
+Show evidence and confidence.
+Route uncertain cases to a human reviewer.
+Generate a report.
+7. Non-Goals
+Do not claim 100% automated legal decisions.
+Do not claim physical measurements can always be derived from a normal photo.
+Do not build dozens of product categories in the first release.
+Reference sources
+Department of Consumer Affairs ΓÇö Legal Metrology overview: https://consumeraffairs.gov.in/pages/legal-metrology-overview
+Department of Consumer Affairs ΓÇö Legal Metrology Act and rules: https://consumeraffairs.gov.in/pages/legal-metrology-act
+India Code ΓÇö Legal Metrology Act, 2009: https://www.indiacode.nic.in/handle/123456789/2102
+Use the latest official rule/amendment documents maintained by the Department as the regulatory source of truth.
+
+
+========== 02_PRD.docx ==========
+02. Product Requirements Document (PRD)
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Product Vision
+Make packaged-commodity inspection faster, more consistent, explainable, and easier to audit.
+2. Target Users
+User
+Need
+Inspector
+Quickly inspect packages and verify findings.
+Supervisor
+Review inspection trends, exceptions, and reports.
+Manufacturer / Packer / Importer
+Pre-screen package labels before release.
+System Admin
+Manage users, categories, rules, and settings.
+3. Functional Requirements
+ID
+Requirement
+Priority
+FR-01
+Create inspection and upload multiple package images.
+Must
+FR-02
+Run image quality checks.
+Must
+FR-03
+Extract declarations using OCR/vision.
+Must
+FR-04
+Map fields into a structured product record.
+Must
+FR-05
+Select the applicable rule pack.
+Must
+FR-06
+Run deterministic compliance checks.
+Must
+FR-07
+Attach evidence and confidence to findings.
+Must
+FR-08
+Send uncertain cases for human review.
+Must
+FR-09
+Generate PDF inspection report.
+Must
+FR-10
+Store inspection history and audit events.
+Must
+FR-11
+Dashboard and search/filter.
+Should
+FR-12
+Rule-pack version management.
+Should
+FR-13
+Manufacturer pre-screening mode.
+Could
+4. Non-Functional Requirements
+Usable on desktop and mobile browsers.
+Secure upload and access control.
+Clear audit trail.
+API-first backend.
+AI provider can be replaced without rewriting the rule engine.
+Graceful handling of low-quality images.
+5. MVP Acceptance
+A user can complete one inspection from image upload to report.
+At least one compliant, one violation, and one low-confidence case work end-to-end.
+Every finding shows evidence and rule reference.
+Human review can override an AI-assisted finding.
+
+
+========== 03_User_Stories.docx ==========
+03. User Stories
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+User Story Format
+As a [user], I want [action], so that [benefit].
+ID
+Actor
+Story
+US-01
+Inspector
+As a inspector, I want to create an inspection and upload front/back/side images, so that the whole package can be reviewed.
+US-02
+Inspector
+As a inspector, I want to see image-quality warnings, so that I know when more photos are needed.
+US-03
+Inspector
+As a inspector, I want to see extracted declarations in structured form, so that I can quickly verify the machine reading.
+US-04
+Inspector
+As a inspector, I want to see which rules were applied, so that the result is explainable.
+US-05
+Inspector
+As a inspector, I want to see each violation on the source image, so that I can verify the evidence.
+US-06
+Inspector
+As a inspector, I want to accept, correct, or reject a finding, so that the final decision remains under human control.
+US-07
+Inspector
+As a inspector, I want to generate an inspection report, so that I can document the inspection.
+US-08
+Supervisor
+As a supervisor, I want to filter inspections by status/category/date, so that I can identify patterns and workload.
+US-09
+Admin
+As a admin, I want to publish a rule-pack version, so that new regulatory requirements can be supported.
+US-10
+Admin
+As a admin, I want to manage users and roles, so that only authorized users can perform sensitive actions.
+US-11
+Manufacturer
+As a manufacturer, I want to run a pre-screening check, so that potential issues can be fixed before release.
+US-12
+Any user
+As a any user, I want to see confidence and review status, so that I know which results need attention.
+Definition of Done
+User action works through UI and API.
+Success and failure states are handled.
+Authorization is checked.
+Audit event is stored where required.
+Test case exists.
+
+
+========== 04_UI_UX_Specification.docx ==========
+04. UI/UX Specification
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. UX Goal
+The application should feel like an inspection tool, not a generic AI chatbot. The user must quickly understand what passed, what failed, and what needs human review.
+2. Main Screens
+Screen
+Purpose
+Key Components
+Login
+Secure sign-in.
+Email/password, session status, error state
+Dashboard
+See inspection overview.
+Counts, filters, recent inspections, attention queue
+New Inspection
+Start a package check.
+Category, product info, image upload/capture
+Image Review
+Check image quality and coverage.
+Image previews, quality warnings, retake/add-image action
+Analysis
+Show extracted fields.
+Field/value/confidence/evidence links
+Compliance Results
+Show outcome.
+Pass/warning/violation sections, rule IDs, evidence
+Human Review
+Resolve uncertain findings.
+Accept/correct/reject, note, evidence viewer
+Report
+Create/download report.
+Summary, findings, evidence, reviewer, rule version
+Rule Packs
+Admin-only rule management.
+Versions, publish status, source, effective date
+Inspection History
+Search past records.
+Filters, status, category, date, inspector
+Settings/Admin
+Manage access.
+Users, roles, audit logs
+3. Visual Language
+Use clean dark/neutral interface with high contrast.
+Use green for pass, amber for warning/review, red for violation, blue for information.
+Avoid using color alone; include text/icon labels.
+Evidence should be visible beside the finding when possible.
+Keep primary action buttons consistent: Analyze, Review, Generate Report.
+4. Important UX Rules
+Never hide uncertainty.
+Show why a finding exists.
+Never make the user guess which image contains the evidence.
+Do not make a legal-looking ΓÇ£approvedΓÇ¥ badge that could be mistaken for official authorization.
+Use plain language such as ΓÇ£Potential violationΓÇ¥ and ΓÇ£Manual verification requiredΓÇ¥ when appropriate.
+5. Key Result Card
+STATUS: REVIEW REQUIREDPassed: 14   Warnings: 2   Violations: 1   Manual Checks: 2Rule version: PC-2026.x
+
+
+========== 05_User_App_Flow.docx ==========
+05. User / App Flow
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Inspector Flow
+Login ΓåÆ Dashboard ΓåÆ New Inspection ΓåÆ Add package images ΓåÆ Quality Gate ΓåÆ Analyze ΓåÆ Review extracted fields ΓåÆ View compliance ΓåÆ Resolve uncertain findings ΓåÆ Finalize ΓåÆ Generate report ΓåÆ Save inspection
+2. Image Quality Flow
+User uploads/captures images.
+System checks blur, visibility, orientation, and basic coverage.
+If poor: show reason and ask for another image.
+If usable: continue to extraction.
+3. Analysis Flow
+Vision/OCR detects text and visual regions.
+Parser maps text into known fields.
+Category/context determines applicable rule pack.
+Rule engine evaluates checks.
+Evidence engine links findings to image regions.
+Confidence layer decides auto-check vs human review.
+4. Human Review Flow
+Finding ΓåÆ Evidence ΓåÆ Inspector action                         Γö£ΓåÆ Accept                         Γö£ΓåÆ Correct                         ΓööΓåÆ Reject
+5. Pre-Screening Flow
+Manufacturer upload ΓåÆ Analysis ΓåÆ Potential issues ΓåÆ Fix artwork ΓåÆ Re-check
+Important: Pre-screening is an assistance workflow, not legal approval.
+6. Exception Flows
+No readable text ΓåÆ request new image.
+Conflicting fields across images ΓåÆ flag conflict.
+Rule unavailable ΓåÆ do not guess; mark ΓÇ£rule not configuredΓÇ¥.
+AI service unavailable ΓåÆ allow retry/failure state; never fabricate a result.
+Physical measurement not reliable from photo ΓåÆ manual verification.
+
+
+========== 06_TRD.docx ==========
+06. Technical Requirements Document (TRD)
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Recommended Stack
+Layer
+Technology
+Reason
+Frontend
+Next.js 15 + React 19 + TypeScript
+Fast, structured web UI
+Styling
+Tailwind CSS
+Consistent responsive UI
+Backend
+Python + FastAPI
+Good fit for OCR/vision and APIs
+AI/Vision
+OCR + OpenCV + Gemini or replaceable model adapter
+Extract text and visual context
+Database
+Supabase PostgreSQL
+Relational data, auth/storage integration
+Storage
+Object storage
+Keep original package images separately from metadata
+Reports
+Server-side PDF generation
+Audit-ready inspection reports
+Deployment
+Vercel frontend + cloud API backend
+Simple deployment model
+Monitoring
+Application logs + error tracking
+Diagnose failures and security events
+2. Technical Principles
+Rule engine is independent from the AI provider.
+Business logic runs server-side; client is not trusted.
+All important decisions are traceable.
+Long-running AI jobs are asynchronous.
+Original evidence is immutable after finalization.
+Use a versioned API (/api/v1).
+3. Processing Requirements
+Accept JPEG/PNG/WebP images within a configured size limit.
+Normalize image orientation and resolution before OCR.
+Store extraction output as structured JSON plus evidence coordinates.
+Store confidence values with extracted fields and findings.
+Timeout and retry external AI calls with bounded retries.
+4. Quality Targets for MVP
+Area
+Target
+API error handling
+All expected client/server errors return structured responses.
+Auditability
+Every finalized inspection records user, time, rule version, and result.
+Evidence
+Every violation/warning has evidence reference or explicit reason why evidence could not be captured.
+Security
+All protected endpoints require authenticated, authorized access.
+
+
+========== 07_System_Architecture.docx ==========
+07. System Architecture
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. High-Level Architecture
+Browser  Γöé  Γû╝Next.js UI ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ  Γöé                         Γöé  Γû╝                         ΓöéFastAPI API  ΓùäΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ  Γöé  Γö£ΓöÇΓöÇ Auth / RBAC  Γö£ΓöÇΓöÇ Inspection Service  Γö£ΓöÇΓöÇ Image Service  Γö£ΓöÇΓöÇ AI Adapter  Γö£ΓöÇΓöÇ Extraction Service  Γö£ΓöÇΓöÇ Rule Engine  Γö£ΓöÇΓöÇ Review Service  Γö£ΓöÇΓöÇ Report Service  ΓööΓöÇΓöÇ Audit Service        Γöé        Γö£ΓöÇΓöÇ PostgreSQL        ΓööΓöÇΓöÇ Object Storage
+2. Core Components
+Component
+Job
+Web App
+Screens, uploads, review UI, dashboard
+API
+Authentication, orchestration, validation, data access
+AI Adapter
+Call vision/OCR provider through a replaceable interface
+Extraction Service
+Convert model/OCR output into normalized declaration fields
+Rule Engine
+Run deterministic regulatory checks
+Evidence Service
+Store coordinates, snippets, image references, confidence
+Review Service
+Record human decisions and corrections
+Report Service
+Build PDF report
+Audit Service
+Record important user/system actions
+3. Data Flow
+Image metadata is created.
+Original image is stored.
+Analysis job is created.
+AI/OCR returns candidate text and regions.
+Structured extraction is stored.
+Rule pack is resolved and checks run.
+Findings and evidence are stored.
+Review tasks are created when needed.
+Final result and report are saved.
+4. Trust Boundaries
+Browser to API: untrusted input.
+API to storage: controlled service access.
+API to AI provider: outbound integration with secrets kept server-side.
+Admin rule publishing: highest privilege boundary.
+
+
+========== 08_Database_Schema.docx ==========
+08. Database Schema
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Main Tables
+Table
+Purpose
+Important Fields
+users
+Application identity.
+id, email, status, created_at
+roles
+Role definitions.
+id, name
+user_roles
+User-to-role mapping.
+user_id, role_id
+inspections
+One package inspection.
+id, user_id, mode, category_id, status, rule_pack_id, final_status, created_at
+inspection_images
+Package images.
+id, inspection_id, storage_key, view_type, quality_status
+extracted_fields
+Structured declaration values.
+id, inspection_id, field_code, value, confidence, source_image_id
+evidence_regions
+Visual evidence.
+id, finding_id, image_id, x, y, width, height, snippet
+rule_packs
+Versioned rule collections.
+id, category_id, version, status, effective_from, source_url
+rules
+Individual checks.
+id, rule_pack_id, code, name, severity, logic_type, config_json
+findings
+Compliance findings.
+id, inspection_id, rule_id, status, confidence, message
+review_tasks
+Human review queue.
+id, finding_id, reviewer_id, decision, note, reviewed_at
+reports
+Generated report metadata.
+id, inspection_id, storage_key, generated_by, created_at
+audit_logs
+Traceability.
+id, actor_id, action, entity_type, entity_id, metadata_json, created_at
+2. Relationships
+users 1ΓöÇΓöÇ* inspectionsinspections 1ΓöÇΓöÇ* inspection_imagesinspections 1ΓöÇΓöÇ* extracted_fieldsinspections 1ΓöÇΓöÇ* findingsfindings 1ΓöÇΓöÇ* evidence_regionsfindings 0..1ΓöÇΓöÇ1 review_tasksrule_packs 1ΓöÇΓöÇ* rulesrules 1ΓöÇΓöÇ* findingsinspections 1ΓöÇΓöÇ* reportsusers 1ΓöÇΓöÇ* audit_logs
+3. Design Rules
+Use UUID primary keys.
+Keep timestamps in UTC.
+Use foreign keys and indexes on search/filter fields.
+Never store secrets in database tables.
+Keep original image object immutable after finalization.
+Use JSONB only for variable metadata, not core relational fields.
+4. Suggested Indexes
+inspections(status, created_at)
+inspections(category_id, created_at)
+findings(inspection_id, status)
+audit_logs(entity_type, entity_id, created_at)
+inspection_images(inspection_id)
+
+
+========== 09_Backend_Architecture.docx ==========
+09. Backend Architecture
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Service Layout
+app/  api/  core/  auth/  inspections/  images/  extraction/  ai/  rules/  findings/  reviews/  reports/  audit/  db/  schemas/
+2. Request Lifecycle
+FastAPI receives request.
+Auth middleware checks session/token.
+Permission check runs.
+Pydantic schema validates input.
+Service layer performs business logic.
+Repository layer reads/writes DB.
+External AI calls happen only through the AI adapter.
+Audit event is written for sensitive actions.
+Response returns a stable API shape.
+3. Async Jobs
+Use background worker/queue for OCR/vision analysis and PDF generation when jobs can take several seconds.
+Inspection stays in PROCESSING state until analysis completes.
+Retries are bounded and idempotent.
+Job failure is visible to the user and logged.
+4. Rule Engine
+resolve_rule_pack(category, inspection_date)        Γåôload_rules(version)        Γåôvalidate(extracted_fields, evidence)        Γåôfindings[]
+5. Error Model
+Type
+Example
+HTTP
+Validation
+Missing required input
+400
+Authentication
+No valid session
+401
+Authorization
+User lacks role
+403
+Not found
+Inspection ID not found
+404
+Conflict
+Inspection already finalized
+409
+External service
+AI provider timeout
+502/503
+Server
+Unexpected exception
+500
+
+
+========== 10_API_Specification.docx ==========
+10. API Specification
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. API Conventions
+Base path: /api/v1
+JSON request/response unless file upload is required.
+Authentication via secure session/JWT mechanism.
+Errors follow one consistent response schema.
+{ "error": { "code": "ERROR_CODE", "message": "Human-readable message", "request_id": "..." } }
+2. Authentication
+Method
+Endpoint
+Purpose
+POST
+/auth/login
+Sign in
+POST
+/auth/logout
+End session
+GET
+/auth/me
+Current user
+3. Inspection APIs
+Method
+Endpoint
+Purpose
+POST
+/inspections
+Create inspection
+GET
+/inspections
+List/search inspections
+GET
+/inspections/{id}
+Get inspection
+POST
+/inspections/{id}/images
+Upload image
+POST
+/inspections/{id}/analyze
+Start analysis
+GET
+/inspections/{id}/analysis
+Get analysis status/result
+POST
+/inspections/{id}/finalize
+Finalize after review
+GET
+/inspections/{id}/report
+Get report metadata/download URL
+4. Review APIs
+Method
+Endpoint
+Purpose
+GET
+/reviews
+List pending review tasks
+POST
+/reviews/{id}/decision
+Accept/correct/reject finding
+5. Rule Pack APIs
+Method
+Endpoint
+Purpose
+GET
+/rule-packs
+List published/available packs
+GET
+/rule-packs/{id}
+Get pack details
+POST
+/rule-packs
+Create draft pack (admin)
+POST
+/rule-packs/{id}/publish
+Publish pack (admin)
+6. Health
+Method
+Endpoint
+Purpose
+GET
+/health
+Basic health
+GET
+/ready
+Dependency readiness
+7. Security Rule
+Never expose AI provider keys to the browser.
+Validate file type and size server-side.
+Use signed/private storage URLs for images and reports.
+
+
+========== 11_Authentication_Authorization.docx ==========
+11. Authentication & Authorization
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Roles
+Role
+Access
+Inspector
+Create inspections, analyze, review assigned findings, generate reports.
+Supervisor
+View team inspections, review trends, access reports, manage review workload.
+Manufacturer
+Run pre-screening and view own pre-screening history.
+Admin
+Manage users, roles, rule packs, system configuration.
+2. Authentication
+Use Supabase Auth or an equivalent secure identity service.
+Use short-lived access tokens/session and secure refresh/session handling.
+Force re-authentication for highly sensitive admin actions where appropriate.
+Store passwords only through the managed auth provider; never in METRA business tables.
+3. Authorization
+Every protected API checks both authentication and role/ownership.
+Manufacturer users can see only their organization data.
+Inspectors cannot publish rules.
+Only admins can publish rule packs or change system permissions.
+Finalized inspection records are read-only except through controlled amendment flow.
+4. Audit
+Record login/security events, inspection creation/finalization, rule publication, review decisions, and report generation.
+
+
+========== 12_Business_Rules.docx ==========
+12. Business Rules
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Core Principle
+METRA is an assistance system. It should never present an uncertain AI output as a confirmed legal decision.
+2. Rules
+ID
+Rule
+BR-01
+Every inspection must have at least one package image.
+BR-02
+An image that fails quality checks cannot be treated as reliable evidence.
+BR-03
+Required declarations come from the selected rule pack/category context.
+BR-04
+AI/OCR output is a candidate value; final validation is performed by deterministic rules.
+BR-05
+Every warning/violation should have evidence or a clear explanation when evidence is unavailable.
+BR-06
+Low-confidence or conflicting findings require human review.
+BR-07
+Physical measurements that cannot be inferred reliably from the image require manual verification.
+BR-08
+A finalized inspection records the rule-pack version used.
+BR-09
+Published rule packs cannot be silently edited; create a new version.
+BR-10
+Human reviewer decision is the final workflow outcome for reviewed findings.
+BR-11
+Pre-screening results must be labeled as potential issues, not legal approval.
+BR-12
+If the system cannot determine an applicable rule, it must flag the rule gap rather than guess.
+3. Status Model
+Inspection: DRAFT ΓåÆ PROCESSING ΓåÆ REVIEW_REQUIRED ΓåÆ FINALIZEDFinding: PASS | WARNING | VIOLATION | MANUAL_REVIEWRule Pack: DRAFT ΓåÆ PUBLISHED ΓåÆ RETIRED
+4. Compliance Result
+Overall status should be derived from findings. Example: any confirmed critical violation ΓåÆ NON-COMPLIANT; unresolved uncertainty ΓåÆ REVIEW REQUIRED; no violations and all required checks passed ΓåÆ COMPLIANT.
+
+
+========== 13_Data_Dictionary.docx ==========
+13. Data Dictionary
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+Field
+Type
+Meaning
+Notes
+inspection_id
+UUID
+Unique inspection record.
+Primary identifier.
+mode
+ENUM
+INSPECTOR or PRE_SCREENING.
+Workflow type.
+category_id
+UUID
+Selected product category.
+Used to resolve rule pack.
+rule_pack_id
+UUID
+Rule pack used.
+Must be stored on finalization.
+final_status
+ENUM
+COMPLIANT / REVIEW_REQUIRED / NON_COMPLIANT.
+Overall workflow result.
+image_id
+UUID
+Unique image record.
+Links image to inspection.
+view_type
+ENUM
+FRONT/BACK/SIDE/OTHER.
+Package view.
+quality_status
+ENUM
+PASS/RETAKE.
+Image usability.
+field_code
+STRING
+Stable declaration field key.
+Example: MRP, NET_QUANTITY.
+field_value
+TEXT/JSON
+Extracted value.
+Normalized when possible.
+confidence
+DECIMAL
+0.00ΓÇô1.00 confidence.
+Not a legal certainty score.
+rule_id
+UUID
+Individual rule identifier.
+Links finding to rule.
+finding_status
+ENUM
+PASS/WARNING/VIOLATION/MANUAL_REVIEW.
+Outcome of one rule.
+evidence_region
+JSON
+Bounding box/region data.
+Coordinates on image.
+review_decision
+ENUM
+ACCEPT/CORRECT/REJECT.
+Human review result.
+rule_version
+STRING
+Published version label.
+Audit reference.
+audit_action
+STRING
+Action name.
+Example: INSPECTION_FINALIZED.
+Naming Rules
+Use snake_case in database and API JSON fields where practical.
+Use stable field codes for rule engine integration.
+Do not use display labels as database keys.
+
+
+========== 14_Security_Specification.docx ==========
+14. Security Specification
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Security Goals
+Protect package images and inspection records.
+Prevent unauthorized access to reports and evidence.
+Protect admin rule management.
+Keep audit records trustworthy.
+2. Controls
+Area
+Control
+Authentication
+Managed auth provider, secure sessions/tokens, rate limits
+Authorization
+RBAC + record ownership checks
+Uploads
+Allowlist file types, size limits, malware scanning where available, server-side validation
+Storage
+Private buckets, signed short-lived URLs
+API
+Input validation, rate limiting, CORS allowlist, secure headers
+Secrets
+Environment variables/secret manager; never commit secrets
+Database
+Least-privilege roles, RLS where supported, parameterized queries
+AI
+Server-side API keys, minimal data sent externally, timeouts/retries
+Audit
+Append-oriented records for sensitive actions
+Logging
+No passwords/tokens/secrets or unnecessary personal data
+Reports
+Private storage and authorized download only
+3. Privacy Principles
+Collect only information needed for inspection and account management.
+Define retention periods for images and reports.
+Allow authorized deletion/retention handling according to organizational policy.
+Do not send more image data to an AI provider than needed.
+4. Threats to Test
+Broken access control.
+Malicious file upload.
+Prompt injection through packaging text.
+AI provider outage.
+Rule tampering.
+Report URL leakage.
+Audit-log deletion/modification.
+5. AI-Specific Safety
+Treat all package text as untrusted data. It must never be interpreted as system instructions. The AI adapter should receive a constrained extraction task and return structured output that is validated server-side.
+
+
+========== 15_Implementation_Plan.docx ==========
+15. Implementation Plan
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Development Strategy
+Build one complete end-to-end inspection flow first. Expand breadth only after the core flow is stable.
+2. Phases
+Phase
+Work
+Output
+Phase 0
+Repo, conventions, environment, UI skeleton
+Running app shell
+Phase 1
+Auth, roles, inspection creation, image upload
+Secure inspection workflow
+Phase 2
+Image quality + OCR/vision adapter
+Structured extraction
+Phase 3
+Rule engine + rule-pack model
+Deterministic checks
+Phase 4
+Evidence + human review
+Explainable findings
+Phase 5
+Reports + history
+Audit-ready output
+Phase 6
+Dashboard + pre-screening
+Broader product value
+Phase 7
+Testing, hardening, demo
+SIH-ready build
+3. Suggested Repository
+metra/  apps/web/  services/api/  services/worker/  packages/rules/  packages/shared/  docs/  tests/
+4. Definition of MVP Done
+A sample package can be uploaded and analyzed end-to-end.
+At least 5ΓÇô8 core declaration checks work for the selected categories.
+At least one violation is correctly shown with evidence.
+Low-confidence case creates review task.
+Reviewer can resolve finding.
+Report is generated and stored.
+Basic audit trail is present.
+5. Suggested Team Split
+Role
+Focus
+Frontend
+Screens, upload, results, review UI
+Backend
+API, DB, auth, workflows
+AI/CV
+OCR, image preprocessing, model adapter, extraction
+Rules/QA
+Rule configuration, test data, domain validation
+Integration/DevOps
+Deployment, CI/CD, monitoring, demo reliability
+
+
+========== 16_Testing_Strategy.docx ==========
+16. Testing Strategy
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Testing Layers
+Layer
+What to Test
+Unit
+Rule functions, parsers, validators
+Integration
+API + DB + storage + AI adapter
+End-to-End
+Upload ΓåÆ analysis ΓåÆ review ΓåÆ report
+Security
+Auth, RBAC, file upload, access control
+AI Quality
+Extraction accuracy, confidence, edge cases
+Usability
+Inspector can complete workflow without confusion
+Regression
+Rule-pack changes do not break previous checks
+2. AI Evaluation
+Create a controlled benchmark set of package images with human-labeled declaration fields.
+Measure field extraction accuracy per field, not only overall accuracy.
+Measure false positives and false negatives for rule outcomes.
+Track low-confidence rate and human correction rate.
+Keep a hard test set containing blur, angle, glare, small text, multiple panels, and multilingual content.
+3. Rule Engine Evaluation
+Each rule has positive, negative, and edge-case tests.
+Each published rule pack has versioned regression tests.
+Test exemptions and ΓÇ£not applicableΓÇ¥ cases explicitly.
+Never let missing configuration silently become PASS.
+4. Release Gate
+All must-pass tests pass.
+No known critical security issue.
+No broken report generation.
+No unresolved data migration issue.
+Demo dataset produces expected outputs.
+
+
+========== 17_Test_Cases.docx ==========
+17. Test Cases
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+ID
+Scenario
+Input
+Expected
+Priority
+TC-001
+Valid login
+Valid user credentials
+Dashboard opens
+High
+TC-002
+Invalid login
+Wrong password
+Error; no session
+High
+TC-003
+Create inspection
+Inspector + selected category
+Draft created
+High
+TC-004
+Bad image
+Blurry/too dark image
+RETAKE/quality warning
+High
+TC-005
+Valid package
+Good image with all core fields
+Fields extracted
+High
+TC-006
+Missing declaration
+Remove required declaration from sample
+Violation finding + evidence
+High
+TC-007
+Low OCR confidence
+Blur a declaration
+MANUAL_REVIEW task
+High
+TC-008
+Conflicting images
+Different values on front/back
+Conflict finding
+High
+TC-009
+Rule pack version
+Run inspection with vA then publish vB
+Old record keeps vA
+High
+TC-010
+Human correction
+Reviewer changes finding
+Final result reflects review
+High
+TC-011
+Report
+Finalize inspection
+PDF generated
+High
+TC-012
+Access control
+Manufacturer requests another org record
+403/hidden
+Critical
+TC-013
+Upload security
+Executable/invalid file
+Rejected
+Critical
+TC-014
+Rule gap
+No applicable rule configured
+Rule-gap warning; no guess
+High
+TC-015
+Pre-screening
+Manufacturer uploads artwork
+Potential issues shown; no legal approval
+Medium
+TC-016
+Audit
+Finalize inspection
+Audit event saved
+High
+TC-017
+AI outage
+AI provider timeout
+Retry/failure state; no fake result
+High
+TC-018
+Physical check
+Font-size cannot be measured reliably
+Manual verification required
+Medium
+Test Data Set
+Use synthetic or permissioned package images.
+Create known-compliant and known-noncompliant examples.
+Include difficult images and multi-image conflicts.
+
+
+========== 18_Deployment_Plan.docx ==========
+18. Deployment Plan
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Target Deployment
+Web frontend on Vercel or equivalent; FastAPI/worker on a managed cloud service; managed PostgreSQL/object storage; external AI service through a secure backend adapter.
+2. Environments
+Environment
+Purpose
+Local
+Developer work and unit tests
+Development
+Shared team integration
+Staging
+Near-production testing and demo rehearsal
+Production
+Stable SIH/demo environment
+3. CI/CD
+Pull request ΓåÆ lint/typecheck/tests ΓåÆ build ΓåÆ deploy preview.
+Merge to main ΓåÆ staging deploy.
+Tagged release ΓåÆ production deploy after checks.
+Database migrations run through a controlled pipeline.
+4. Backups & Recovery
+Use managed database backups.
+Store critical report/object metadata in durable storage.
+Test restoration before final demo.
+Keep a demo dataset that can be recreated.
+5. Rollback
+Frontend rollback through previous deployment.
+Backend rollback through versioned release.
+Rule pack rollback means selecting previous published version; never overwrite historical inspection records.
+6. Production Checklist
+Custom domain/HTTPS if used.
+Environment variables present.
+CORS configured.
+Storage private.
+Admin account secured.
+Monitoring/logging active.
+Demo accounts and sample data ready.
+
+
+========== 19_Environment_Specification.docx ==========
+19. Environment Specification
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+1. Developer Environment
+Item
+Recommended
+OS
+Windows 10/11, macOS, or Linux
+Node.js
+Current LTS compatible with Next.js project
+Python
+3.11+ recommended for backend
+Package manager
+npm/pnpm + pip/uv
+Database
+Supabase project or local PostgreSQL
+Git
+Git + GitHub
+IDE
+VS Code
+Browser
+Chrome/Edge/Firefox latest stable
+2. Runtime Environment
+Component
+Recommendation
+Web
+Node.js runtime / Vercel
+API
+Python FastAPI on managed container/server
+Worker
+Python worker process
+DB
+Managed PostgreSQL
+Storage
+Private object bucket
+AI
+Server-side model API through adapter
+Reports
+Python PDF service/library
+3. Environment Variables
+DATABASE_URLSUPABASE_URLSUPABASE_SERVICE_ROLE_KEYAI_PROVIDER_API_KEYSTORAGE_BUCKETAPP_BASE_URLJWT/SESSION settingsLOG_LEVEL
+4. Local Setup
+Clone repository.
+Create .env.local/.env from example templates.
+Install frontend and backend dependencies.
+Run database migrations.
+Start API and web app.
+Create test user and seed rule pack/test data.
+5. Data Policy
+Never commit .env files.
+Use synthetic/approved images for development.
+Keep production images out of developer machines unless explicitly authorized.
+
+
+========== 20_Requirements_Traceability_Matrix.docx ==========
+20. Requirements Traceability Matrix (RTM)
+Project: AI-Assisted Legal Metrology Compliance & Inspection System | SIH Problem Statement: SIH26034
+Document purpose: Clear, implementation-ready guidance for the METRA SIH team. Language is intentionally simple; technical terms are explained where needed.
+Requirement
+Description
+PRD Ref
+UI Ref
+Technical Ref
+Test Ref
+Status
+REQ-01
+Package image inspection
+FR-01, FR-02
+UI-03
+API /inspections
+TC-003, TC-004
+Planned
+REQ-02
+Declaration extraction
+FR-03, FR-04
+UI-05
+Analysis service
+TC-005, TC-007
+Planned
+REQ-03
+Applicable rule selection
+FR-05
+UI-05
+Rule engine
+TC-009, TC-014
+Planned
+REQ-04
+Compliance checking
+FR-06
+UI-06
+Rule engine
+TC-006, TC-009
+Planned
+REQ-05
+Evidence-backed findings
+FR-07
+UI-06
+Evidence service
+TC-006, TC-010
+Planned
+REQ-06
+Human verification
+FR-08
+UI-07
+Review service
+TC-007, TC-010
+Planned
+REQ-07
+Reports
+FR-09
+UI-08
+Report service
+TC-011
+Planned
+REQ-08
+History/audit
+FR-10
+UI-02/UI-09
+Audit service
+TC-016
+Planned
+REQ-09
+Dashboard
+FR-11
+UI-02
+Dashboard API
+TC-016
+Planned
+REQ-10
+Versioned rules
+FR-12
+UI-09
+Rule pack service
+TC-009
+Planned
+REQ-11
+Pre-screening
+FR-13
+UI-01
+Inspection service
+TC-015
+Planned
+REQ-12
+Security/RBAC
+NFR-SEC
+All protected screens
+Auth service
+TC-012, TC-013
+Planned
+REQ-13
+AI uncertainty handling
+NFR-AI
+UI-06/UI-07
+Confidence/review service
+TC-007, TC-017, TC-018
+Planned
+Traceability Rule
+Every Must requirement should map to a user-facing behavior, an implementation component, and at least one test case before the MVP is considered complete.
+Final Delivery Checklist
+No Must requirement without an implementation reference.
+No implementation component without tests.
+All critical security requirements linked to tests.
+Regulatory rule sources are documented and versioned.
+
+
+========== METRA_Master_Product_Implementation_Plan.docx ==========
+METRA
+MASTER PRODUCT + IMPLEMENTATION PLAN
+SIH26034 ΓÇö AI-Assisted Legal Metrology Compliance & Inspection System
+Version 1.0 ΓÇó Product-management master source of truth
+CORE PRODUCT PRINCIPLEAI understands the package ΓåÆ the rule engine applies the requirements ΓåÆ evidence explains the result ΓåÆ humans verify uncertain cases ΓåÆ the system creates the final inspection record.
+HOW TO USE THIS DOCUMENTUse this document as the product-manager plan. The coding agent follows the build order and acceptance criteria here. The 20 supporting specifications remain detailed references. Do not start a new feature unless its goal, acceptance criteria and dependencies are clear.
+1. Executive Product Brief
+Item
+Decision
+Product
+METRA (working product name; rename later if needed without changing architecture)
+Problem Statement
+SIH26034 ΓÇö Software System to check compliance of Packaged Commodities under Legal Metrology (Packaged Commodities) Rules, 2011 by scanning products, images and labels.
+Primary users
+Legal Metrology inspectors / reviewers
+Secondary users
+Manufacturers, packers and importers for compliance pre-screening
+Core promise
+Turn package images into explainable, evidence-backed compliance findings.
+MVP scope
+Selected packaged consumer categories; multi-image inspection; focused rule pack; human review; report; history
+Technology direction
+Next.js 15, React 19, TypeScript, FastAPI/Python, Supabase/PostgreSQL, OCR/Vision, Gemini adapter
+Product type
+Web-based inspection and decision-support platform
+The one-sentence product definition
+METRA is a web platform that helps inspectors analyze package images, extract declarations, apply the correct rule pack, show evidence-backed findings, route uncertain cases to human review, and create an auditable inspection record.
+The non-negotiable product boundary
+METRA is inspection assistance and decision support, not an autonomous legal authority; regulatory rules stay in versioned rule packs and must not be hidden inside prompts.
+AI extracts and interprets information; the deterministic rule engine decides the configured compliance result.
+If an image cannot reliably prove a physical or measurement requirement, METRA must request manual verification instead of guessing.
+2. Product Goals, Non-Goals and Success Criteria
+Goals
+Create one complete inspection workflow that works end-to-end.
+Reduce repetitive manual checking for selected packaged-product categories.
+Make every important finding explainable with evidence, rule and confidence.
+Make regulatory logic maintainable without retraining the AI layer.
+Allow human reviewers to accept, correct or reject AI-assisted findings.
+Produce a reproducible inspection report and audit trail.
+Create an architecture that can later expand to more product categories and rule packs.
+Non-goals for the SIH MVP
+All Indian product categories and all possible legal exceptions.
+Autonomous legal enforcement or automatic fines.
+Perfect physical font-size measurement from arbitrary photographs.
+Custom model training from scratch.
+20+ language optimization.
+Government-scale multi-region infrastructure.
+Blockchain, tokenization or IoT unless a future requirement proves they are necessary.
+MVP success criteria
+Area
+Success condition
+Inspection
+Inspector creates an inspection and uploads 2ΓÇô3 package images.
+Image quality
+Bad images are rejected/flagged before expensive AI processing.
+Extraction
+System returns structured declaration fields with confidence and source evidence.
+Rules
+At least 5ΓÇô8 focused checks return deterministic results for selected categories.
+Evidence
+At least one real violation is shown with a visual evidence region.
+Review
+Low-confidence/conflicting cases generate a review task.
+Finalization
+Reviewer can accept/correct/reject findings.
+Reporting
+Finalized inspection produces a report and searchable history.
+Security
+Cross-user data access is blocked; secrets never reach the browser.
+Demo
+Same seeded input produces the same rule outcomes repeatedly.
+3. Target Users and Product Jobs
+Persona
+Main job
+Needs
+Inspector
+Check a package efficiently
+Fast upload, clear findings, evidence, review controls, report
+Reviewer
+Resolve uncertain findings
+Evidence view, confidence, rule details, accept/correct/reject
+Admin
+Manage users and rule packs
+Access control, rule-pack versions, audit history
+Manufacturer / Packer
+Pre-screen a package before release
+Potential issue list, evidence, export; not legal approval
+Primary user journey
+Sign in ΓåÆ Create inspection ΓåÆ Add product/context ΓåÆ Upload front/back/side images ΓåÆ Quality gate ΓåÆ Analysis ΓåÆ Review findings ΓåÆ Finalize ΓåÆ Generate report ΓåÆ View history
+Core user outcomes
+The user can see what the system found.
+The user can see why the system found it.
+The user can decide what to do with uncertain findings.
+The user can later reconstruct how an inspection was produced.
+4. Product Scope by Release
+Capability
+MVP
+Post-MVP
+Later
+Login + roles
+Yes
+Expand org management
+Enterprise SSO
+Multi-image package upload
+Yes
+More capture guidance
+Mobile capture workflow
+Image quality gate
+Yes
+Better quality scoring
+Camera assistance
+OCR/Vision extraction
+Yes
+More providers/languages
+Specialized CV models
+Category/context resolution
+Yes (focused categories)
+Broader categories
+Advanced classification
+Versioned rule packs
+Yes
+More rules
+Automated rule authoring assistance
+Evidence regions
+Yes
+Better region detection
+Advanced document layout models
+Human review
+Yes
+Bulk review
+Collaborative review
+Reports/history/audit
+Yes
+More report templates
+External system integration
+Dashboard
+Basic
+Advanced filters/trends
+Risk prioritization analytics
+Industry pre-screening
+Optional late MVP
+Yes
+Partner workflow
+Physical measurement
+Manual-assist only
+Calibrated assistance
+Specialized hardware/capture if justified
+MVP categories
+Start with 3ΓÇô4 selected packaged consumer categories where the team can assemble reliable demo data and a focused set of rules. Recommended categories: packaged food, personal-care products, household packaged products, and selected imported packaged consumer products.
+SCOPE RULEBreadth is not the goal. One reliable end-to-end inspection flow is more valuable than ten partially working categories.
+5. Product Workflow and Functional Specification
+A. Create inspection
+Choose or confirm category/context.
+Create inspection draft.
+Allow optional product name, notes and source information.
+Bind the inspection to the rule-pack version used for evaluation.
+B. Image capture and quality gate
+Accept JPEG/PNG/WebP within configured size limits.
+Normalize orientation and relevant metadata.
+Run basic checks for size, blur, extreme darkness/brightness and likely unreadability.
+Allow recapture before invoking expensive AI calls.
+C. AI/Vision extraction
+Extract only defined fields from a strict schema.
+Store value + confidence + source image + optional bounding region.
+Preserve original OCR text when needed for audit/debugging.
+Keep the provider behind a replaceable interface.
+D. Category + rule resolution
+Resolve the applicable rule pack based on selected/identified context.
+Pin the exact rule-pack version to the inspection.
+Do not let the LLM invent legal rules.
+If applicability is uncertain, mark the case for review.
+E. Deterministic validation
+Check type
+Example behavior
+Presence
+Required declaration exists / missing
+Structure
+Value follows configured structure or pattern
+Value/quantity
+Configured validation of normalized quantity/value
+Consistency
+Conflicting values across package images
+Placement/readability
+Potential issue detected; manual verification when proof is insufficient
+Applicability
+Rule only runs where the rule pack says it applies
+F. Finding + evidence
+Every important finding gets status, severity, message, confidence and rule reference.
+Evidence stores image, region/bounding box where available, and source value.
+Do not overwrite original AI finding when a reviewer corrects it; store review action separately.
+G. Human review
+Accept finding.
+Correct finding.
+Reject finding.
+Add reviewer note when needed.
+Lock final decision when inspection is finalized.
+H. Report + audit
+Generate structured report with inspection metadata, findings, evidence references, rule version and reviewer action.
+Store immutable audit events for key transitions.
+History screen must allow authorized users to reopen finalized inspection details without changing the record.
+6. Product Backlog ΓÇö Master Epics and Tasks
+ID
+Epic / task
+Priority
+Depends on
+Definition of done
+P0-01
+Repository + architecture baseline
+P0
+None
+Repo structure, README, env template, checks pass
+P0-02
+Database migration baseline
+P0
+P0-01
+Initial schema and migration run cleanly
+P0-03
+Web/API/worker shells
+P0
+P0-01
+All services start locally
+P1-01
+Authentication
+P0
+P0-03
+User can sign in securely
+P1-02
+Role authorization
+P0
+P1-01
+Inspector/reviewer/admin restrictions enforced server-side
+P1-03
+Inspection draft lifecycle
+P0
+P1-02
+Create/save/reopen inspection
+P1-04
+Private multi-image upload
+P0
+P1-03
+2ΓÇô3 images upload, view, persist
+P2-01
+Image normalization
+P0
+P1-04
+Orientation/size normalization works
+P2-02
+Quality gate
+P0
+P2-01
+Bad image is flagged; good image proceeds
+P2-03
+Analysis job model
+P0
+P2-01
+Jobs have reliable pending/running/success/fail states
+P3-01
+Vision/OCR adapter
+P0
+P2-03
+Provider-neutral extraction interface exists
+P3-02
+Strict extraction schema
+P0
+P3-01
+Sample package produces structured JSON
+P3-03
+Confidence + evidence mapping
+P0
+P3-02
+Fields link to confidence/source region
+P4-01
+Rule pack model
+P0
+P3-02
+Versioned rule pack stored and selectable
+P4-02
+Core validators
+P0
+P4-01
+5ΓÇô8 focused checks are deterministic
+P4-03
+Result aggregation
+P0
+P4-02
+Inspection status derived consistently
+P5-01
+Finding evidence UI
+P0
+P3-03
+Finding shows image evidence
+P5-02
+Review task UI
+P0
+P5-01
+Reviewer can accept/correct/reject
+P5-03
+Finalize workflow
+P0
+P5-02
+Finalized inspection becomes locked
+P6-01
+Report generation
+P0
+P5-03
+PDF/report generated and stored
+P6-02
+Inspection history
+P0
+P6-01
+Authorized user can search/reopen history
+P6-03
+Audit log
+P0
+P5-03
+Key actions are traceable
+P7-01
+Dashboard
+P1
+P6-02
+Counts and filters reflect inspection data
+P7-02
+Pre-screening mode
+P1
+P6-01
+Separate non-enforcement workflow works
+P8-01
+Security hardening
+P0
+P6-03
+Auth, file access and input controls verified
+P8-02
+Test + demo seed
+P0
+All core
+Clean demo passes repeatedly
+P8-03
+Deployment
+P0
+P8-01
+Deploy + health checks work
+7. Technical Blueprint
+Recommended repository
+metra/apps/web ΓÇö Next.js 15 frontend
+metra/services/api ΓÇö FastAPI application
+metra/services/worker ΓÇö analysis/report jobs
+metra/packages/rules ΓÇö versioned rule packs and validators
+metra/packages/shared ΓÇö shared types/enums/contracts
+metra/docs ΓÇö product + technical documents and decisions
+metra/tests ΓÇö integration, API and rule tests
+Architecture
+Layer
+Responsibility
+Technology
+Web
+Inspection UI, review UI, dashboard
+Next.js 15, React 19, TypeScript, Tailwind
+API
+Auth, inspections, findings, rules, reports
+Python, FastAPI
+Worker
+OCR/vision jobs, report generation
+Python async worker
+AI adapter
+Vision/OCR provider abstraction
+Gemini initially; provider-neutral interface
+Rule engine
+Deterministic rule evaluation
+Python rule services/packages
+DB
+Transactional product data
+Supabase PostgreSQL
+Storage
+Package images/reports
+Private object storage
+Observability
+Health/logging/error tracking
+Structured logs + health endpoint
+Critical architecture rule
+KEEP THE AI LAYER REPLACEABLEThe system must work conceptually even if Gemini is replaced. The extraction interface returns structured candidate fields; the rule engine consumes structured data and does not depend on an LLM prompt.
+Core data entities
+Entity
+Purpose
+users
+Identity and role
+inspections
+Main inspection record and lifecycle status
+inspection_images
+Stored package image metadata and quality results
+products
+Optional normalized product information
+extractions
+Field-level AI/OCR extraction results
+rule_packs
+Versioned compliance collections
+rules
+Individual deterministic checks
+findings
+Compliance findings
+finding_evidence
+Links findings to images/regions/source values
+review_tasks
+Human verification actions
+reports
+Generated report metadata
+audit_logs
+Traceability of important actions
+8. API and State Contract
+API rules
+All public endpoints use /api/v1.
+Server-side authorization is required on every privileged endpoint.
+Return stable error shapes and validation errors.
+Long-running AI/report operations use job IDs; do not block request threads.
+Idempotency is required for retryable analysis/report jobs.
+Core endpoint groups
+Group
+Purpose
+/auth/*
+Session / identity / role information
+/inspections
+Create, list, get, finalize inspections
+/inspections/{id}/images
+Upload/list image metadata
+/inspections/{id}/analyze
+Create analysis job
+/jobs/{id}
+Job status
+/inspections/{id}/extractions
+Read normalized extraction results
+/rule-packs
+List/select rule packs
+/inspections/{id}/findings
+Read findings
+/findings/{id}/review
+Accept/correct/reject finding
+/inspections/{id}/report
+Generate/read report
+/audit-logs
+Authorized audit views
+/dashboard/*
+Aggregated metrics and filters
+Inspection status model
+Status
+Meaning
+DRAFT
+Created but not ready for analysis
+PROCESSING
+Image/AI analysis running
+REVIEW_REQUIRED
+Uncertain/conflicting/manual cases exist
+COMPLIANT
+Required checks passed with no unresolved critical violation
+NON_COMPLIANT
+Confirmed violation remains
+FINALIZED
+Decision locked; later changes are new review events
+FAILED
+Processing failed safely and can be retried
+9. UI/UX Delivery Plan
+Screen inventory
+Screen
+Primary goal
+Priority
+Sign in
+Secure access
+P0
+Dashboard
+See current workload and status
+P0
+New inspection
+Create inspection and upload images
+P0
+Image review
+See uploaded images and quality results
+P0
+Analysis progress
+Understand processing state
+P0
+Findings
+Review pass/warning/violation results
+P0
+Evidence viewer
+See finding evidence in image context
+P0
+Human review
+Accept/correct/reject findings
+P0
+Report
+Read/export finalized report
+P0
+Inspection history
+Search and reopen past records
+P0
+Rule pack admin
+Manage rule versions
+P1
+Pre-screening
+Industry self-check workflow
+P1
+UX rules
+Never hide why a finding exists.
+Distinguish PASS, WARNING, VIOLATION and REVIEW REQUIRED clearly.
+Always show image evidence next to important findings.
+Use plain language first; show technical rule detail as secondary information.
+Never use an ΓÇ£AI confidenceΓÇ¥ number as if it were legal certainty.
+Keep the inspector workflow fast: upload ΓåÆ analyze ΓåÆ review ΓåÆ finalize.
+Use accessible contrast and keyboard-friendly controls.
+10. Security, Privacy and Reliability Requirements
+Area
+Requirement
+Authentication
+Use a secure session/auth provider; no passwords stored by custom code unless explicitly required.
+Authorization
+Server-side role and ownership checks; do not trust client role values.
+Storage
+Private object storage; signed/authorized access only.
+Secrets
+API keys and provider secrets remain server-side in environment variables.
+Input validation
+Validate file type, size, image count, JSON payloads and IDs.
+Rate limiting
+Protect expensive AI/report endpoints.
+Audit
+Log login-sensitive and inspection-state changes.
+Data isolation
+Users cannot query another user/organizationΓÇÖs private inspections.
+Provider failure
+Timeouts, bounded retries, clear FAILED state; no duplicate results.
+Determinism
+Rule evaluation for the same normalized input + rule version must return the same result.
+Retention
+Define what images/reports are retained and for how long; do not keep unnecessary provider output.
+Critical security tests
+Cross-user inspection read attempt is blocked.
+Direct object URL without authorization does not expose private image.
+Reviewer cannot finalize an inspection outside allowed role.
+Secrets are absent from client bundle and Git repository.
+Malformed upload / oversized file is rejected safely.
+11. AI/OCR Product Contract
+What AI is allowed to do
+Read package text and visual context.
+Propose structured field values.
+Return confidence and source regions where possible.
+Flag ambiguity.
+Assist category/context suggestion.
+What AI is NOT allowed to do
+Invent legal requirements.
+Write or change rule-pack logic.
+Finalize a legal inspection without rule evaluation and human workflow.
+Claim physical measurements that cannot be supported by capture/calibration.
+Return free-form prose as the only machine-consumed output.
+Strict extraction contract
+The model should return structured JSON matching a schema. Unknown values should be null/unknown rather than guessed. Each field should include source image and confidence metadata when available.
+Provider adapter interface
+Conceptual contract: analyze_images(images, extraction_schema) ΓåÆ ExtractionResult. Keep Gemini behind the adapter so another provider can be substituted later.
+12. Rule Engine Product Contract
+Rule-pack structure
+Field
+Purpose
+id
+Stable rule-pack identifier
+name
+Human-readable name
+version
+Version label
+category
+Applicable category/context
+effective_from
+When the pack is intended to apply
+status
+Draft / Active / Retired
+source_ref
+Authoritative source reference
+Rule structure
+Field
+Purpose
+code
+Stable rule code
+description
+What the rule checks
+severity
+Informational / warning / critical
+evaluator_type
+Presence / pattern / quantity / consistency / etc.
+config_json
+Machine-readable parameters
+source_ref
+Where the requirement came from
+Rule authoring discipline
+Every rule must cite an authoritative source during development.
+Ambiguous legal language must be flagged for human/domain review.
+Historical inspections keep the rule version used at evaluation time.
+Rule updates are tested before activation.
+Do not encode assumptions as legal requirements.
+LEGAL / REGULATORY STOP CONDITIONIf the correct rule, exception, threshold or applicability cannot be verified from an authoritative source, stop the implementation decision and record the unresolved question. Do not let the coding agent invent the answer.
+13. Development Roadmap and Sprint Plan
+Milestone
+Duration target*
+Main work
+Exit criteria
+M0 Foundation
+1ΓÇô2 days
+Repo, services, env, CI, DB baseline
+All services run locally; health endpoint; migration; checks pass
+M1 Secure inspection
+2ΓÇô3 days
+Auth, roles, inspection draft, image upload
+Inspector can create and reopen private inspection
+M2 Image pipeline
+2 days
+Normalization, quality gate, job states
+Bad images flagged; good images proceed; retries safe
+M3 AI extraction
+3ΓÇô4 days
+OCR/vision adapter, schema, confidence, regions
+Seed package returns structured fields
+M4 Rule engine
+3ΓÇô4 days
+Rule packs + 5ΓÇô8 focused validators
+Deterministic PASS/WARN/VIOLATION
+M5 Evidence + review
+2ΓÇô3 days
+Finding evidence, review UI, finalize
+Reviewer resolves uncertain findings
+M6 Report + history
+2 days
+PDF/report, audit, history
+Finalized inspection produces traceable report
+M7 Dashboard
+1ΓÇô2 days
+Metrics, filters, workload view
+Dashboard reflects real inspection records
+M8 Hardening
+3ΓÇô4 days
+Tests, security, demo seed, deployment
+Clean-state demo passes repeatedly
+*Targets are planning estimates, not promises. Adjust based on team size and existing code.
+Recommended team split
+Role
+Primary ownership
+Product/Tech Lead (you)
+Architecture, backlog, integration, backend/AI decisions, final demo
+Frontend
+Screens, upload, findings, evidence viewer, dashboard
+AI/CV
+OCR, image preprocessing, vision adapter, extraction evaluation
+Rules/QA
+Rule mapping, seed datasets, validators, test cases
+DevOps/Integration
+CI/CD, deployment, logs, environment, demo reliability
+14. Test and Quality Management
+Testing layers
+Layer
+What to test
+Unit
+Rule evaluators, normalization, status aggregation, permissions
+API
+Validation, auth, ownership, job transitions, report generation
+AI contract
+Schema validity, null handling, confidence, evidence mapping
+Integration
+Upload ΓåÆ analyze ΓåÆ findings ΓåÆ review ΓåÆ finalize ΓåÆ report
+Security
+Cross-user access, signed files, role bypass, input abuse
+Regression
+Known demo packages keep deterministic rule outputs
+UX
+Inspector can complete core path without confusing states
+Minimum demo test set
+Case
+Expected result
+Clean package
+COMPLIANT
+Missing required declaration
+NON_COMPLIANT with evidence
+Low-confidence extracted field
+REVIEW_REQUIRED
+Conflicting values across images
+REVIEW_REQUIRED or configured violation
+Unreadable image
+Quality gate failure / recapture
+Unsupported file
+Request rejected
+AI provider timeout
+Retry then FAILED safely; no duplicates
+Reviewer correction
+Original AI finding retained; corrected decision stored separately
+Rule pack version change
+New inspection uses new version; historical inspection retains old version
+15. Product Risks and Mitigation
+Risk
+Impact
+Mitigation
+Owner
+OCR/vision mistakes
+High
+Confidence thresholds + evidence + human review
+AI/CV
+Blurry/angled images
+Medium
+Quality gate + recapture guidance
+Frontend + AI/CV
+Incorrect legal interpretation
+Critical
+Authoritative sources + rule review + stop condition
+Rules/QA + Product
+Scope creep
+High
+P0/P1 backlog; no unapproved feature expansion
+Product Lead
+Provider outage/cost
+Medium
+Adapter + timeout/retry + mock analyzer
+Backend
+Physical measurement limits
+High
+Manual verification unless calibration is defensible
+Product + AI/CV
+Cross-user data leak
+Critical
+Server-side authorization + storage controls + tests
+Backend/Security
+Demo instability
+High
+Seeded deterministic cases + clean-state runbook
+DevOps/Integration
+Scope-creep rules
+New product category must have clear business value, rule source, test data and acceptance criteria.
+New AI capability must not weaken deterministic rule evaluation.
+New external integration requires a defined failure mode and security review.
+If a feature cannot be tested in the SIH demo window, defer it.
+16. Product Manager Operating Model
+Decision hierarchy
+Official SIH problem statement and official regulatory sources define the external constraints.
+This master plan defines the approved product intent, MVP boundary and execution order.
+The 20 supporting documents provide detailed requirements for specific domains.
+Code is considered correct only when it satisfies product requirements and acceptance criteria.
+The agent must record material deviations as decisions; do not silently change the product.
+Weekly / phase review checklist
+What user problem did we improve this phase?
+What end-to-end path is now working?
+What acceptance criteria passed?
+What is still fake/mock?
+What legal/regulatory assumptions are unresolved?
+What technical debt did we create?
+Are security boundaries still correct?
+Does the demo still work from a clean environment?
+Change request template
+CR-ID | Request | Why needed | User value | Scope impact | Architecture impact | Security impact | Data impact | Test impact | Priority | Decision | Owner
+17. Agent Execution Protocol
+AGENT MUST READ FIRSTRead this master plan and the supporting specification documents before writing code. Inspect the existing repository before creating modules. Reuse working code when it is safe. Build one complete slice at a time.
+Every task execution cycle
+1. Read the relevant requirement and acceptance criteria.
+2. Inspect existing code and dependencies.
+3. Implement the smallest production-worthy change.
+4. Write/update tests immediately.
+5. Run formatting, lint, type checks and tests relevant to the change.
+6. Run the affected user flow manually.
+7. Update documentation/decision log if architecture or scope changed.
+8. Commit the change with a meaningful message.
+9. Report what changed, what passed, what remains and what decision is needed.
+Agent stop conditions
+Legal/regulatory requirement is uncertain or cannot be verified.
+Physical measurement cannot be defensibly calculated.
+A new feature changes the approved core scope.
+Authorization or data isolation is unclear or broken.
+A retry creates duplicated findings or reports.
+Same normalized input + same rule version produces inconsistent rule results.
+First 15 implementation tasks
+1. Inspect repository and existing implementation; make no code changes.
+2. Write a gap report against this plan.
+3. Create/confirm monorepo structure and developer README.
+4. Add env template and local setup validation.
+5. Create FastAPI health endpoint and web app shell.
+6. Create initial DB migration and shared enums.
+7. Implement authentication and roles.
+8. Implement inspection creation and image upload.
+9. Implement image quality gate and analysis job model.
+10. Implement provider-neutral OCR/Vision adapter with mock analyzer.
+11. Implement strict extraction schema + confidence/evidence storage.
+12. Implement versioned rule-pack model and 5ΓÇô8 focused validators.
+13. Implement findings + evidence UI.
+14. Implement human review and finalize workflow.
+15. Implement report + history + audit trail.
+18. Definition of Done ΓÇö METRA SIH MVP
+User can sign in and receive the correct role.
+Inspector can create an inspection and upload 2ΓÇô3 package images.
+Image-quality gate works before AI processing.
+AI/OCR returns structured candidate fields with confidence and source evidence.
+Focused rule pack is selected and pinned to the inspection.
+At least 5ΓÇô8 deterministic compliance checks work.
+At least one seeded violation appears with visual evidence.
+Low-confidence or conflicting findings become review tasks.
+Reviewer can accept, correct or reject findings.
+Overall inspection status is deterministic and explainable.
+Finalized inspection produces a report and audit record.
+Inspection history is searchable by authorized users.
+No secrets are exposed to the browser or repository.
+Critical authorization/security tests pass.
+End-to-end demo works repeatedly from a clean state.
+All ΓÇ£demoΓÇ¥ capabilities are clearly distinguished from ΓÇ£planned/futureΓÇ¥ capabilities.
+THE PROJECT IS NOT DONE WHEN THE UI LOOKS GOODIt is done when the same seeded package inputs reliably travel through capture ΓåÆ extraction ΓåÆ rule validation ΓåÆ evidence ΓåÆ human review ΓåÆ final report without broken security or unexplained compliance decisions.
+19. Final Product Decisions ΓÇö Freeze Before Coding
+Decision
+Approved direction
+Product name
+METRA is the current working name; architecture should not depend on the brand name.
+Core principle
+AI understands; rules decide; humans verify uncertainty.
+MVP user
+Inspector / reviewer
+MVP scope
+Selected categories + focused rules
+AI provider
+Gemini initially behind adapter
+Frontend
+Next.js 15 + React 19 + TypeScript
+Backend
+FastAPI + Python
+Database
+Supabase PostgreSQL
+Storage
+Private object storage
+Rule engine
+Server-side deterministic versioned rules
+Human review
+Required for uncertainty/conflict/manual physical checks
+Reports
+Generated after finalization
+Pre-screening
+P1 / late MVP, not legal approval
+Physical font-size claims
+Manual-assist unless calibration makes them defensible
+Autonomous enforcement
+Not allowed
+Final operating sentence
+METRAΓÇ£Scan the package. Understand the declarations. Apply the right rules. Show the evidence. Let the inspector decide.ΓÇ¥
+20. Supporting Documents and References
+01_Project_Brief.docx
+02_PRD.docx
+03_User_Stories.docx
+04_UI_UX_Specification.docx
+05_User_App_Flow.docx
+06_TRD.docx
+07_System_Architecture.docx
+08_Database_Schema.docx
+09_Backend_Architecture.docx
+10_API_Specification.docx
+11_Authentication_Authorization.docx
+12_Business_Rules.docx
+13_Data_Dictionary.docx
+14_Security_Specification.docx
+15_Implementation_Plan.docx
+16_Testing_Strategy.docx
+17_Test_Cases.docx
+18_Deployment_Plan.docx
+19_Environment_Specification.docx
+20_Requirements_Traceability_Matrix.docx
+METRA_Agent_Implementation_Plan.docx ΓÇö earlier agent-ready execution reference
+Regulatory rule content must be verified against current authoritative Department of Consumer Affairs / India Code sources during implementation. This master plan intentionally avoids inventing legal thresholds or exemptions.

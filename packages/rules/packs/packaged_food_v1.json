@@ -1,0 +1,103 @@
+{
+  "id": "packaged_food_v1",
+  "version": "1.0.0",
+  "category_code": "packaged_food",
+  "category_name": "Packaged Food",
+  "effective_from": "2024-01-01",
+  "legal_source": "Legal Metrology (Packaged Commodities) Rules, 2011 + Amendment Rules 2022",
+  "gazette_ref": "G.S.R. 202(E), March 9, 2011 | G.S.R. 737(E), October 1, 2022",
+  "source_url": "https://consumeraffairs.gov.in/pages/legal-metrology-act",
+  "rules": [
+    {
+      "id": "LM-PRE-01",
+      "name": "Product Name / Generic Name Declaration",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(a)",
+      "severity": "VIOLATION",
+      "check_type": "presence",
+      "field_code": "product_name",
+      "applies_when": "always",
+      "message_on_fail": "Product name or generic name is missing. Required under LMPC Rules 2011, Rule 6(1)(a).",
+      "cannot_check": ["prominence_of_placement", "font_size_compliance"]
+    },
+    {
+      "id": "LM-PRE-02",
+      "name": "Manufacturer / Packer / Importer Name and Address",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(c)",
+      "severity": "VIOLATION",
+      "check_type": "presence",
+      "field_code": "manufacturer",
+      "applies_when": "always",
+      "message_on_fail": "Manufacturer, packer, or importer name and address is missing. Required under LMPC Rules 2011, Rule 6(1)(c).",
+      "cannot_check": ["address_authenticity", "pin_code_validity"]
+    },
+    {
+      "id": "LM-PRE-03",
+      "name": "Net Quantity Declaration",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(b)",
+      "severity": "VIOLATION",
+      "check_type": "presence",
+      "field_code": "net_quantity",
+      "applies_when": "always",
+      "message_on_fail": "Net quantity is missing. Required under LMPC Rules 2011, Rule 6(1)(b).",
+      "cannot_check": ["actual_weight_accuracy", "fill_level_verification"]
+    },
+    {
+      "id": "LM-PRE-04",
+      "name": "MRP Declaration (inclusive of all taxes)",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(e)",
+      "severity": "VIOLATION",
+      "check_type": "presence_and_format",
+      "field_code": "mrp",
+      "format_hint": "Must contain 'MRP' or 'Rs.' prefix",
+      "applies_when": "always",
+      "message_on_fail": "Maximum Retail Price (MRP) is missing or improperly formatted. Required under LMPC Rules 2011, Rule 6(1)(e). Must be inclusive of all taxes.",
+      "cannot_check": ["price_accuracy", "anti_overpricing", "tax_calculation"]
+    },
+    {
+      "id": "LM-PRE-05",
+      "name": "Date of Manufacture / Packing / Best Before",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(d)",
+      "severity": "VIOLATION",
+      "check_type": "presence",
+      "field_code": "date_info",
+      "applies_when": "always",
+      "message_on_fail": "Month and year of manufacture/packing is missing. Required under LMPC Rules 2011, Rule 6(1)(d).",
+      "cannot_check": ["date_accuracy", "shelf_life_calculation"]
+    },
+    {
+      "id": "LM-PRE-06",
+      "name": "Consumer Care Contact Details",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(f)",
+      "severity": "WARNING",
+      "check_type": "presence",
+      "field_code": "consumer_care",
+      "applies_when": "always",
+      "message_on_fail": "Consumer care contact details (phone/email) are missing. Required under LMPC Rules 2011, Rule 6(1)(f).",
+      "cannot_check": ["contact_validity", "toll_free_verification"]
+    },
+    {
+      "id": "LM-STR-01",
+      "name": "Net Quantity Unit Format (SI Units)",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(b)",
+      "severity": "WARNING",
+      "check_type": "structure",
+      "field_code": "net_quantity",
+      "allowed_units": ["g", "kg", "ml", "l", "L", "mg", "cm", "m"],
+      "applies_when": "net_quantity_present",
+      "message_on_fail": "Net quantity unit does not follow standard SI notation. Use g, kg, ml, L etc.",
+      "cannot_check": ["quantity_accuracy"]
+    },
+    {
+      "id": "LM-APP-01",
+      "name": "Country of Origin (Imported Products Only)",
+      "legal_ref": "LMPC Rules 2011, Rule 6(1)(g)",
+      "severity": "VIOLATION",
+      "check_type": "applicability",
+      "field_code": "country_of_origin",
+      "applies_when": "is_imported == true",
+      "message_on_fail": "Country of origin is missing on an imported product. Mandatory under LMPC Rules 2011, Rule 6(1)(g).",
+      "message_not_applicable": "Country of origin not required for domestic products.",
+      "cannot_check": ["country_accuracy"]
+    }
+  ]
+}
