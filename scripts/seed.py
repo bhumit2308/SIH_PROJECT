@@ -44,10 +44,10 @@ CATEGORIES = [
 ]
 
 DEMO_USERS = [
-    {"email": "inspector@metra.demo", "full_name": "Rajesh Kumar (Inspector)", "role": RoleName.INSPECTOR},
-    {"email": "supervisor@metra.demo", "full_name": "Priya Sharma (Supervisor)", "role": RoleName.SUPERVISOR},
-    {"email": "manufacturer@metra.demo", "full_name": "Arjun Patel (Manufacturer)", "role": RoleName.MANUFACTURER},
-    {"email": "admin@metra.demo", "full_name": "System Admin", "role": RoleName.ADMIN},
+    {"email": "inspector@metra.demo", "full_name": "Bhumit Vasava (Inspector)", "role": RoleName.INSPECTOR},
+    {"email": "supervisor@metra.demo", "full_name": "Aayush Mishra (Supervisor)", "role": RoleName.SUPERVISOR},
+    {"email": "manufacturer@metra.demo", "full_name": "Nikhil (Manufacturer)", "role": RoleName.MANUFACTURER},
+    {"email": "admin@metra.demo", "full_name": "BOOM (Admin)", "role": RoleName.ADMIN},
 ]
 
 PACKS_DIR = Path(__file__).parent.parent / "packages" / "rules" / "packs"
