@@ -150,32 +150,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo hints */}
-        <div style={{
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(99,102,241,0.06)',
-          border: '1px solid rgba(99,102,241,0.15)',
-          borderRadius: '10px',
-          fontSize: '0.775rem',
-          color: 'var(--text-muted)',
-        }}>
-          <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-            Demo Accounts
-          </p>
-          {[
-            { email: 'inspector@metra.demo', role: 'Inspector' },
-            { email: 'supervisor@metra.demo', role: 'Supervisor' },
-            { email: 'admin@metra.demo', role: 'Admin' },
-          ].map(u => (
-            <div key={u.email} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.7rem' }}>{u.email}</span>
-              <span className="badge badge-info" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>{u.role}</span>
-            </div>
-          ))}
-        </div>
-
-        <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
           Ministry of Consumer Affairs · Government of India
         </p>
       </div>
