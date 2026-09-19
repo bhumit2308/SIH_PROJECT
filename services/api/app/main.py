@@ -9,6 +9,7 @@ from app.auth.router import router as auth_router
 from app.inspections.router import router as inspections_router
 from app.reviews.router import router as reviews_router
 from app.rules.router import router as rules_router
+from app.reports.router import router as reports_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
@@ -90,5 +91,6 @@ async def ready():
 # ── Routers ───────────────────────────────────────────────
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(inspections_router, prefix="/api/v1/inspections", tags=["Inspections"])
+app.include_router(reports_router, prefix="/api/v1/inspections", tags=["Reports"])
 app.include_router(reviews_router, prefix="/api/v1/reviews", tags=["Reviews"])
 app.include_router(rules_router, prefix="/api/v1/rule-packs", tags=["Rule Packs"])

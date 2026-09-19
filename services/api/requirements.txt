@@ -13,6 +13,7 @@ supabase
 pillow
 google-generativeai
 reportlab
+qrcode[pil]
 httpx
 python-dotenv
 arq

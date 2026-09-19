@@ -84,6 +84,32 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   const [isPolling, setIsPolling] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reportGenerating, setReportGenerating] = useState(false);
+  const [reportToast, setReportToast] = useState<string | null>(null);
+
+  const handleDownloadReport = async () => {
+    if (!token || !inspection) return;
+    setReportGenerating(true);
+    setReportToast(null);
+    try {
+      const res = await apiRequest<{ report_id: string; download_url: string }>(
+        `/api/v1/inspections/${inspectionId}/report`,
+        { token, method: 'POST' }
+      );
+      if (res.download_url) {
+        window.open(res.download_url, '_blank', 'noopener');
+        setReportToast('Official notice generated and downloading…');
+      } else {
+        setReportToast('Report generated but URL unavailable. Check Supabase storage.');
+      }
+    } catch (e: any) {
+      const msg = e?.message || 'Report generation failed.';
+      setReportToast(`Error: ${msg}`);
+    } finally {
+      setReportGenerating(false);
+      setTimeout(() => setReportToast(null), 6000);
+    }
+  };
 
   const fetchDetail = async (quiet = false) => {
     if (!token) return;
@@ -208,7 +234,35 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          {/* Report Toast */}
+          {reportToast && (
+            <span style={{
+              fontSize: '0.75rem', padding: '0.35rem 0.75rem',
+              background: reportToast.startsWith('Error') ? 'rgba(220,38,38,0.15)' : 'rgba(22,163,74,0.15)',
+              border: `1px solid ${reportToast.startsWith('Error') ? 'rgba(220,38,38,0.4)' : 'rgba(22,163,74,0.4)'}`,
+              color: reportToast.startsWith('Error') ? '#f87171' : '#4ade80',
+              borderRadius: '6px', maxWidth: '280px',
+            }}>
+              {reportToast}
+            </span>
+          )}
+          <button
+            className="btn btn-primary"
+            onClick={handleDownloadReport}
+            disabled={reportGenerating || !inspection || inspection.status === 'DRAFT'}
+            title={inspection?.status === 'DRAFT' ? 'Run analysis first' : 'Generate Official Statutory Notice PDF'}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              background: reportGenerating ? 'rgba(99,102,241,0.5)' : undefined,
+              cursor: (reportGenerating || inspection?.status === 'DRAFT') ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {reportGenerating
+              ? <><RefreshCw size={14} className="animate-spin" /> Generating PDF…</>
+              : <><Download size={14} /> Download Official Notice</>
+            }
+          </button>
           <button
             className="btn btn-ghost"
             onClick={() => fetchDetail(false)}
