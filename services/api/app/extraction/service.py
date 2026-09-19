@@ -16,7 +16,7 @@ from app.core.database import AsyncSessionLocal
 from app.core.models import (
     Inspection, InspectionImage, ExtractedField, Finding, ReviewTask,
     AnalysisJob, RulePack, Rule, InspectionStatus, FinalStatus,
-    FindingStatus, Severity, JobStatus, QualityStatus,
+    FindingStatus, Severity, JobStatus, QualityStatus, EvidenceRegion,
 )
 from app.core.config import settings
 from app.ai.adapter import ExtractionResult, ExtractionField
@@ -120,9 +120,10 @@ async def _run(db: AsyncSession, inspection_id: str, job_id: str):
                         field_code=field_code,
                         raw_value=field_val.raw_value,
                         confidence=field_val.confidence,
+                        parsed_data={"bbox": field_val.bounding_box} if field_val.bounding_box else None,
                     )
                     db.add(ef)
-                    all_extractions.setdefault(field_code, []).append(field_val)
+                    all_extractions.setdefault(field_code, []).append((field_val, image.id))
 
         except Exception as e:
             logger.error(f"Failed to process image {image.id}: {e}")
@@ -131,9 +132,11 @@ async def _run(db: AsyncSession, inspection_id: str, job_id: str):
 
     # ── Step 2: Build aggregated field view (best confidence wins) ─
     best_fields: dict[str, ExtractionField] = {}
-    for field_code, fields in all_extractions.items():
-        best = max(fields, key=lambda f: f.confidence)
-        best_fields[field_code] = best
+    best_field_images: dict[str, str] = {}
+    for field_code, field_tuples in all_extractions.items():
+        best_tuple = max(field_tuples, key=lambda t: t[0].confidence)
+        best_fields[field_code] = best_tuple[0]
+        best_field_images[field_code] = best_tuple[1]
 
     # ── Step 3: Run deterministic rule engine ─────────────
     findings = []
@@ -163,6 +166,18 @@ async def _run(db: AsyncSession, inspection_id: str, job_id: str):
                 ai_raw_value=field_val.raw_value,
             )
             db.add(f)
+            if field_val.bounding_box:
+                ev = EvidenceRegion(
+                    id=str(uuid.uuid4()),
+                    finding_id=f.id,
+                    image_id=best_field_images.get(field_code),
+                    x=field_val.bounding_box.get("x"),
+                    y=field_val.bounding_box.get("y"),
+                    width=field_val.bounding_box.get("width"),
+                    height=field_val.bounding_box.get("height"),
+                    source_text=field_val.raw_value,
+                )
+                db.add(ev)
             # Create review task
             rt = ReviewTask(id=str(uuid.uuid4()), finding_id=f.id)
             db.add(rt)
@@ -181,6 +196,21 @@ async def _run(db: AsyncSession, inspection_id: str, job_id: str):
             ai_raw_value=finding_data.get("ai_value"),
         )
         db.add(f)
+        fc = finding_data.get("field_code")
+        if fc and fc in best_fields:
+            best_f = best_fields[fc]
+            if best_f.bounding_box:
+                ev = EvidenceRegion(
+                    id=str(uuid.uuid4()),
+                    finding_id=f.id,
+                    image_id=best_field_images.get(fc),
+                    x=best_f.bounding_box.get("x"),
+                    y=best_f.bounding_box.get("y"),
+                    width=best_f.bounding_box.get("width"),
+                    height=best_f.bounding_box.get("height"),
+                    source_text=best_f.raw_value,
+                )
+                db.add(ev)
         if f.status == FindingStatus.VIOLATION:
             has_violation = True
         if f.status == FindingStatus.REVIEW_REQUIRED:

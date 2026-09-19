@@ -29,16 +29,17 @@ CRITICAL RULES:
 
 Return EXACTLY this JSON schema, no other keys:
 {
-  "product_name": {"raw_value": "string or null", "confidence": 0.0},
-  "net_quantity": {"raw_value": "string or null", "confidence": 0.0},
-  "mrp": {"raw_value": "string or null", "confidence": 0.0},
-  "manufacturer": {"raw_value": "string or null", "confidence": 0.0},
-  "date_info": {"raw_value": "string or null", "confidence": 0.0},
-  "consumer_care": {"raw_value": "string or null", "confidence": 0.0},
-  "country_of_origin": {"raw_value": "string or null", "confidence": 0.0},
-  "unit_sale_price": {"raw_value": "string or null", "confidence": 0.0},
+  "product_name": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "net_quantity": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "mrp": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "manufacturer": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "date_info": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "consumer_care": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "country_of_origin": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
+  "unit_sale_price": {"raw_value": "string or null", "confidence": 0.0, "box_2d": [0, 0, 0, 0]},
   "raw_ocr_text": "all readable text from the image as a single string"
 }
+Note for box_2d: If the field is clearly visible, return normalized coordinates [ymin, xmin, ymax, xmax] scaled 0 to 1000 around the detected text on the package panel. If not visible or uncertain, return null.
 """
 
 
@@ -96,11 +97,41 @@ class GeminiAdapter(ExtractionAdapter):
     def _parse_response(self, data: dict) -> ExtractionResult:
         def _field(key: str) -> ExtractionField | None:
             v = data.get(key)
-            if not v:
+            if not v or not isinstance(v, dict):
                 return None
+            raw_val = v.get("raw_value")
+            if not raw_val:
+                return None
+
+            bbox = None
+            box = v.get("box_2d")
+            if box and isinstance(box, (list, tuple)) and len(box) == 4:
+                try:
+                    ymin, xmin, ymax, xmax = [float(c) for c in box]
+                    # Scale to 0..100 percentage
+                    if ymax > 1.0 or xmax > 1.0:
+                        ymin /= 10.0
+                        xmin /= 10.0
+                        ymax /= 10.0
+                        xmax /= 10.0
+                    else:
+                        ymin *= 100.0
+                        xmin *= 100.0
+                        ymax *= 100.0
+                        xmax *= 100.0
+                    bbox = {
+                        "x": round(max(0.0, min(100.0, xmin)), 2),
+                        "y": round(max(0.0, min(100.0, ymin)), 2),
+                        "width": round(max(1.0, min(100.0 - xmin, xmax - xmin)), 2),
+                        "height": round(max(1.0, min(100.0 - ymin, ymax - ymin)), 2),
+                    }
+                except Exception:
+                    bbox = None
+
             return ExtractionField(
-                raw_value=v.get("raw_value"),
+                raw_value=raw_val,
                 confidence=float(v.get("confidence", 0.0)),
+                bounding_box=bbox,
             )
 
         return ExtractionResult(

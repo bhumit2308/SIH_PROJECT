@@ -1,13 +1,23 @@
 'use client';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, apiRequest } from '@/lib/auth';
 import {
   ArrowLeft, CheckCircle2, AlertTriangle, AlertCircle, Clock,
-  FileText, RefreshCw, Eye, Shield, Tag, Calendar, User,
-  Check, X, Edit3, ExternalLink, Download, Layers, Sparkles
+  FileText, RefreshCw, Eye, EyeOff, Shield, Tag, Calendar, User,
+  Check, X, Edit3, ExternalLink, Download, Layers, Sparkles, Crosshair, Award
 } from 'lucide-react';
+
+interface EvidenceRegion {
+  id: string;
+  image_id: string | null;
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+  source_text: string | null;
+}
 
 interface Finding {
   id: string;
@@ -17,6 +27,7 @@ interface Finding {
   field_code: string | null;
   ai_raw_value: string | null;
   human_override_value?: string | null;
+  evidence_regions?: EvidenceRegion[];
 }
 
 interface ExtractedField {
@@ -25,7 +36,11 @@ interface ExtractedField {
   raw_value: string;
   normalized_value: string | null;
   confidence: number;
-  source_image_id: string;
+  source_image_id: string | null;
+  parsed_data?: {
+    bbox?: { x: number; y: number; width: number; height: number };
+    [key: string]: any;
+  } | null;
 }
 
 interface InspectionImage {
@@ -42,11 +57,14 @@ interface InspectionDetail {
   category_id: string;
   category?: { code: string; name_en: string };
   product_name: string | null;
+  product_notes?: string | null;
+  source_info?: string | null;
   mode: string;
   status: string;
   final_status: string;
   confidence_score: number | null;
   created_at: string;
+  finalized_at?: string | null;
   images: InspectionImage[];
   extracted_fields: ExtractedField[];
   findings: Finding[];
@@ -86,6 +104,8 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reportGenerating, setReportGenerating] = useState(false);
   const [reportToast, setReportToast] = useState<string | null>(null);
+  const [selectedFieldCode, setSelectedFieldCode] = useState<string | null>(null);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   const handleDownloadReport = async () => {
     if (!token || !inspection) return;
@@ -200,6 +220,95 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
     ? `https://gdlbajjqtjhuotocqeqz.supabase.co/storage/v1/object/public/metra-images/${selectedImage.storage_key}`
     : null;
 
+  // Compute all bounding boxes associated with this image or findings
+  const visibleBoxes = useMemo(() => {
+    if (!inspection || !selectedImage) return [];
+
+    const boxes: Array<{
+      id: string;
+      fieldCode: string;
+      label: string;
+      text: string;
+      status: 'PASS' | 'WARNING' | 'VIOLATION' | 'REVIEW_REQUIRED';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color: string;
+      bg: string;
+      bgActive: string;
+    }> = [];
+
+    // 1. From Findings evidence_regions
+    for (const f of inspection.findings || []) {
+      const fc = f.field_code || 'declaration';
+      const label = FIELD_LABELS[fc] || fc;
+      const status = f.status;
+      const isViol = status === 'VIOLATION';
+      const isWarn = status === 'WARNING' || status === 'REVIEW_REQUIRED';
+      const color = isViol ? '#ef4444' : isWarn ? '#f59e0b' : '#10b981';
+      const bg = isViol ? 'rgba(239, 68, 68, 0.18)' : isWarn ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.18)';
+      const bgActive = isViol ? 'rgba(239, 68, 68, 0.4)' : isWarn ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+
+      for (const ev of f.evidence_regions || []) {
+        if (!ev.image_id || ev.image_id === selectedImage.id) {
+          if (ev.x != null && ev.y != null && ev.width != null && ev.height != null) {
+            boxes.push({
+              id: ev.id,
+              fieldCode: fc,
+              label,
+              text: ev.source_text || f.ai_raw_value || '',
+              status,
+              x: ev.x,
+              y: ev.y,
+              width: ev.width,
+              height: ev.height,
+              color,
+              bg,
+              bgActive,
+            });
+          }
+        }
+      }
+    }
+
+    // 2. From Extracted Fields parsed_data.bbox (if not already added)
+    for (const ef of inspection.extracted_fields || []) {
+      if (!ef.source_image_id || ef.source_image_id === selectedImage.id) {
+        const bbox = ef.parsed_data?.bbox;
+        if (bbox && bbox.x != null && bbox.y != null && bbox.width != null && bbox.height != null) {
+          if (!boxes.some(b => b.fieldCode === ef.field_code)) {
+            const fc = ef.field_code;
+            const label = FIELD_LABELS[fc] || fc;
+            const hasViolation = inspection.findings?.some(f => f.field_code === fc && f.status === 'VIOLATION');
+            const hasWarning = inspection.findings?.some(f => f.field_code === fc && (f.status === 'WARNING' || f.status === 'REVIEW_REQUIRED'));
+            const status = hasViolation ? 'VIOLATION' : hasWarning ? 'WARNING' : 'PASS';
+            const color = hasViolation ? '#ef4444' : hasWarning ? '#f59e0b' : '#10b981';
+            const bg = hasViolation ? 'rgba(239, 68, 68, 0.18)' : hasWarning ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.18)';
+            const bgActive = hasViolation ? 'rgba(239, 68, 68, 0.4)' : hasWarning ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)';
+
+            boxes.push({
+              id: ef.id,
+              fieldCode: fc,
+              label,
+              text: ef.raw_value || '',
+              status,
+              x: bbox.x,
+              y: bbox.y,
+              width: bbox.width,
+              height: bbox.height,
+              color,
+              bg,
+              bgActive,
+            });
+          }
+        }
+      }
+    }
+
+    return boxes;
+  }, [inspection, selectedImage]);
+
   return (
     <>
       {/* Header Bar */}
@@ -298,31 +407,116 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
           {/* Left Column: Image Package Viewer */}
           <div className="card" style={{ padding: '1.25rem', position: 'sticky', top: '1.5rem' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Layers size={16} color="var(--accent)" />
-              Commodity Packaging Panel
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                <Layers size={16} color="var(--accent)" />
+                Packaging Panel &amp; AI Perception
+              </h3>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowOverlay(!showOverlay)}
+                title={showOverlay ? 'Hide bounding boxes' : 'Show bounding boxes'}
+                style={{
+                  fontSize: '0.72rem', padding: '0.25rem 0.5rem',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                  color: showOverlay ? 'var(--accent-light)' : 'var(--text-muted)',
+                  border: `1px solid ${showOverlay ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '6px'
+                }}
+              >
+                {showOverlay ? <><Eye size={13} /> Overlay ON</> : <><EyeOff size={13} /> Overlay OFF</>}
+              </button>
+            </div>
+
+            {selectedFieldCode && (
+              <div style={{
+                marginBottom: '0.75rem', padding: '0.35rem 0.65rem',
+                background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                fontSize: '0.75rem', color: 'var(--accent-light)'
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Crosshair size={13} />
+                  Focusing: <strong>{FIELD_LABELS[selectedFieldCode] || selectedFieldCode}</strong>
+                </span>
+                <button
+                  onClick={() => setSelectedFieldCode(null)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}
+                  title="Clear focus"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {inspection.images && inspection.images.length > 0 ? (
               <div>
-                {/* Main View Area */}
+                {/* Main View Area with Interactive Bounding Box Evidence Layer */}
                 <div style={{
-                  width: '100%', height: '340px', borderRadius: '10px',
+                  width: '100%', height: '360px', borderRadius: '10px',
                   background: '#070b14', overflow: 'hidden', display: 'flex',
                   alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)',
                   marginBottom: '1rem', position: 'relative'
                 }}>
                   {publicImageUrl ? (
-                    <img
-                      src={publicImageUrl}
-                      alt={selectedImage?.view_type}
-                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                    />
+                    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img
+                        src={publicImageUrl}
+                        alt={selectedImage?.view_type}
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', userSelect: 'none' }}
+                      />
+
+                      {/* Evidence Bounding Boxes */}
+                      {showOverlay && visibleBoxes.map((box, bIdx) => {
+                        const isSelected = selectedFieldCode === box.fieldCode;
+                        return (
+                          <div
+                            key={bIdx}
+                            onClick={() => {
+                              setSelectedFieldCode(box.fieldCode);
+                              setActiveTab('findings');
+                            }}
+                            title={`${box.label}: ${box.text}`}
+                            style={{
+                              position: 'absolute',
+                              left: `${box.x}%`,
+                              top: `${box.y}%`,
+                              width: `${box.width}%`,
+                              height: `${box.height}%`,
+                              border: isSelected ? `2.5px solid ${box.color}` : `1.5px solid ${box.color}`,
+                              background: isSelected ? box.bgActive : box.bg,
+                              boxShadow: isSelected ? `0 0 16px ${box.color}` : `0 0 6px ${box.color}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              zIndex: isSelected ? 20 : 10,
+                            }}
+                          >
+                            <span style={{
+                              position: 'absolute',
+                              top: '-18px',
+                              left: '-1px',
+                              fontSize: '0.6rem',
+                              fontWeight: 700,
+                              background: box.color,
+                              color: '#000',
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              whiteSpace: 'nowrap',
+                              pointerEvents: 'none',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.6)',
+                            }}>
+                              {box.fieldCode.toUpperCase()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Image loading…</div>
                   )}
 
-                  <div style={{ position: 'absolute', bottom: '8px', left: '8px' }}>
+                  <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 25 }}>
                     <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>
                       {selectedImage?.view_type}
                     </span>
@@ -334,7 +528,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                   {inspection.images.map((img, idx) => (
                     <div
                       key={img.id}
-                      onClick={() => setSelectedImageIndex(idx)}
+                      onClick={() => { setSelectedImageIndex(idx); setSelectedFieldCode(null); }}
                       style={{
                         width: '68px', height: '68px', borderRadius: '8px',
                         border: idx === selectedImageIndex ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -352,16 +546,56 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </div>
 
+                {/* Detected Declarations Quick Selector Chips */}
+                <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>
+                    Detected Declarations ({inspection.extracted_fields?.length || 0}) · Click to Focus:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {['mrp', 'net_quantity', 'manufacturer', 'date_info', 'unit_sale_price', 'country_of_origin', 'consumer_care'].map((fc) => {
+                      const ef = inspection.extracted_fields?.find(f => f.field_code === fc);
+                      if (!ef) return null;
+                      const isSel = selectedFieldCode === fc;
+                      const hasViol = inspection.findings?.some(f => f.field_code === fc && f.status === 'VIOLATION');
+                      const pillColor = hasViol ? 'var(--danger)' : 'var(--success)';
+                      return (
+                        <button
+                          key={fc}
+                          onClick={() => {
+                            setSelectedFieldCode(isSel ? null : fc);
+                          }}
+                          style={{
+                            fontSize: '0.68rem',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '12px',
+                            border: isSel ? `1.5px solid ${pillColor}` : '1px solid var(--border)',
+                            background: isSel ? 'rgba(99,102,241,0.2)' : 'var(--card-bg)',
+                            color: isSel ? 'var(--accent-light)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: pillColor }} />
+                          {fc.replace('_', ' ')}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Image Quality Summary */}
                 {selectedImage && (
-                  <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Image Quality Gate</span>
+                  <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.75rem', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Quality Gate</span>
                       <span className={`badge ${selectedImage.quality_status === 'PASS' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem' }}>
                         {selectedImage.quality_status}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
                       Storage Key: <code style={{ fontFamily: 'monospace', color: 'var(--accent-light)' }}>{selectedImage.storage_key}</code>
                     </div>
                   </div>
@@ -409,13 +643,17 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                     const sev = SEVERITY_COLORS[finding.severity] || SEVERITY_COLORS.MEDIUM;
                     const isViolation = finding.status === 'VIOLATION';
 
+                    const isSelected = selectedFieldCode === finding.field_code;
                     return (
                       <div
                         key={finding.id}
                         className="card"
                         style={{
                           borderLeft: `4px solid ${isViolation ? 'var(--danger)' : sev.color}`,
-                          padding: '1.25rem'
+                          border: isSelected ? '2px solid var(--accent)' : undefined,
+                          boxShadow: isSelected ? '0 0 16px rgba(99,102,241,0.35)' : undefined,
+                          padding: '1.25rem',
+                          transition: 'all 0.2s ease',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.5rem' }}>
@@ -438,6 +676,27 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                               </span>
                             )}
                           </div>
+                          {finding.field_code && (
+                            <button
+                              onClick={() => {
+                                setSelectedFieldCode(isSelected ? null : finding.field_code);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="btn btn-ghost"
+                              style={{
+                                fontSize: '0.72rem',
+                                padding: '0.25rem 0.6rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                color: isSelected ? 'var(--accent-light)' : 'var(--text-secondary)',
+                                border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                                borderRadius: '6px'
+                              }}
+                            >
+                              <Crosshair size={13} /> {isSelected ? 'Unfocus' : 'Locate on Package'}
+                            </button>
+                          )}
                         </div>
 
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
@@ -537,46 +796,97 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
             {/* TAB 3: Officer Review & Finalization */}
             {activeTab === 'review' && (
               <div className="card">
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Shield size={18} color="var(--accent)" />
-                  Officer Statutory Determination
-                </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-                  As the certifying Legal Metrology Officer, verify the AI-assisted findings against the physical or imaged package. Your determination forms part of the permanent statutory audit record under Section 15 of the Act.
-                </p>
+                {inspection.status === 'FINALIZED' ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem 1rem' }}>
+                    <div style={{
+                      width: '64px', height: '64px', borderRadius: '50%',
+                      background: inspection.final_status === 'COMPLIANT' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                      border: `2px solid ${inspection.final_status === 'COMPLIANT' ? 'var(--success)' : 'var(--danger)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem'
+                    }}>
+                      <Award size={32} color={inspection.final_status === 'COMPLIANT' ? 'var(--success)' : 'var(--danger)'} />
+                    </div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                      Statutory Determination Sealed &amp; Finalized
+                    </h3>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <span className={`badge ${inspection.final_status === 'COMPLIANT' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }}>
+                        {inspection.final_status === 'COMPLIANT' ? 'OFFICIALLY CERTIFIED COMPLIANT' : 'STATUTORY VIOLATION NOTICE ISSUED'}
+                      </span>
+                    </div>
 
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                    Officer Inspection Notes / Compounding Remarks (Optional)
-                  </label>
-                  <textarea
-                    className="input"
-                    rows={4}
-                    placeholder="Enter statutory remarks, compound notice citations, or justifications for manual override…"
-                    value={reviewNote}
-                    onChange={(e) => setReviewNote(e.target.value)}
-                    style={{ resize: 'vertical' }}
-                  />
-                </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem', maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+                      This inspection record has been officially determined under Section 15 of the Legal Metrology Act, 2009.
+                      {inspection.finalized_at && ` Determination recorded on ${new Date(inspection.finalized_at).toLocaleString('en-IN')}.`}
+                    </p>
 
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                  <button
-                    className="btn btn-primary"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
-                    disabled={reviewSubmitting}
-                    onClick={() => handleReviewDecision('ACCEPT')}
-                  >
-                    <Check size={16} /> Certify as COMPLIANT
-                  </button>
+                    {inspection.product_notes && (
+                      <div style={{
+                        textAlign: 'left', background: 'var(--bg-secondary)', padding: '1rem',
+                        borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--border)',
+                        fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5,
+                        fontFamily: 'monospace', whiteSpace: 'pre-wrap'
+                      }}>
+                        {inspection.product_notes}
+                      </div>
+                    )}
 
-                  <button
-                    className="btn btn-danger"
-                    disabled={reviewSubmitting}
-                    onClick={() => handleReviewDecision('REJECT')}
-                  >
-                    <X size={16} /> Issue NON-COMPLIANCE Violation Notice
-                  </button>
-                </div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleDownloadReport}
+                      disabled={reportGenerating}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem' }}
+                    >
+                      {reportGenerating
+                        ? <><RefreshCw size={15} className="animate-spin" /> Generating Sealed Notice…</>
+                        : <><Download size={15} /> Download Official Sealed Notice (PDF)</>
+                      }
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Shield size={18} color="var(--accent)" />
+                      Officer Statutory Determination
+                    </h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                      As the certifying Legal Metrology Officer, verify the AI-assisted findings against the physical or imaged package. Your determination forms part of the permanent statutory audit record under Section 15 of the Act.
+                    </p>
+
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
+                        Officer Inspection Notes / Compounding Remarks (Optional)
+                      </label>
+                      <textarea
+                        className="input"
+                        rows={4}
+                        placeholder="Enter statutory remarks, compound notice citations, or justifications for manual override…"
+                        value={reviewNote}
+                        onChange={(e) => setReviewNote(e.target.value)}
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+                        disabled={reviewSubmitting}
+                        onClick={() => handleReviewDecision('ACCEPT')}
+                      >
+                        <Check size={16} /> Certify as COMPLIANT
+                      </button>
+
+                      <button
+                        className="btn btn-danger"
+                        disabled={reviewSubmitting}
+                        onClick={() => handleReviewDecision('REJECT')}
+                      >
+                        <X size={16} /> Issue NON-COMPLIANCE Violation Notice
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

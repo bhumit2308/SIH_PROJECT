@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
 from app.core.models import (
-    Inspection, InspectionImage, Category, RulePack,
+    Inspection, InspectionImage, Category, RulePack, Finding,
     InspectionMode, InspectionStatus, FinalStatus,
     ImageViewType, QualityStatus, RoleName, User
 )
@@ -32,6 +32,11 @@ class CreateInspectionRequest(BaseModel):
     product_notes: Optional[str] = None
     source_info: Optional[str] = None
     is_imported: bool = False
+
+
+class FinalizeInspectionRequest(BaseModel):
+    final_status: FinalStatus
+    note: Optional[str] = None
 
 
 class InspectionOut(BaseModel):
@@ -128,6 +133,74 @@ async def list_inspections(
     ]
 
 
+def _serialize_inspection(inspection: Inspection) -> dict:
+    return {
+        "id": str(inspection.id),
+        "category_id": str(inspection.category_id),
+        "category": {
+            "code": inspection.category.code,
+            "name_en": inspection.category.name_en,
+        } if inspection.category else None,
+        "product_name": inspection.product_name,
+        "product_notes": inspection.product_notes,
+        "source_info": inspection.source_info,
+        "mode": inspection.mode.value if hasattr(inspection.mode, "value") else str(inspection.mode),
+        "status": inspection.status.value if hasattr(inspection.status, "value") else str(inspection.status),
+        "final_status": inspection.final_status.value if hasattr(inspection.final_status, "value") else str(inspection.final_status),
+        "created_at": inspection.created_at.isoformat() if inspection.created_at else None,
+        "finalized_at": inspection.finalized_at.isoformat() if inspection.finalized_at else None,
+        "images": [
+            {
+                "id": str(img.id),
+                "view_type": img.view_type.value if hasattr(img.view_type, "value") else str(img.view_type),
+                "storage_key": img.storage_key,
+                "file_name": img.file_name,
+                "quality_status": img.quality_status.value if hasattr(img.quality_status, "value") else str(img.quality_status),
+                "quality_checks": img.quality_checks,
+                "width_px": img.width_px,
+                "height_px": img.height_px,
+            }
+            for img in (inspection.images or [])
+        ],
+        "extracted_fields": [
+            {
+                "id": str(ef.id),
+                "field_code": ef.field_code,
+                "raw_value": ef.raw_value,
+                "normalized_value": ef.normalized_value,
+                "confidence": ef.confidence,
+                "source_image_id": str(ef.source_image_id) if ef.source_image_id else None,
+                "parsed_data": ef.parsed_data,
+            }
+            for ef in (inspection.extracted_fields or [])
+        ],
+        "findings": [
+            {
+                "id": str(f.id),
+                "rule_id": str(f.rule_id) if f.rule_id else None,
+                "status": f.status.value if hasattr(f.status, "value") else str(f.status),
+                "severity": f.severity.value if hasattr(f.severity, "value") else str(f.severity),
+                "message": f.message,
+                "field_code": f.field_code,
+                "ai_raw_value": f.ai_raw_value,
+                "evidence_regions": [
+                    {
+                        "id": str(ev.id),
+                        "image_id": str(ev.image_id) if ev.image_id else None,
+                        "x": ev.x,
+                        "y": ev.y,
+                        "width": ev.width,
+                        "height": ev.height,
+                        "source_text": ev.source_text,
+                    }
+                    for ev in (f.evidence_regions or [])
+                ],
+            }
+            for f in (inspection.findings or [])
+        ],
+    }
+
+
 # ── Get Single Inspection ─────────────────────────────────
 @router.get("/{inspection_id}")
 async def get_inspection(
@@ -141,7 +214,7 @@ async def get_inspection(
             selectinload(Inspection.category),
             selectinload(Inspection.images),
             selectinload(Inspection.extracted_fields),
-            selectinload(Inspection.findings),
+            selectinload(Inspection.findings).selectinload(Finding.evidence_regions),
             selectinload(Inspection.analysis_jobs),
         )
         .where(Inspection.id == inspection_id)
@@ -149,7 +222,7 @@ async def get_inspection(
     inspection = result.scalar_one_or_none()
     if not inspection:
         raise HTTPException(404, {"code": "NOT_FOUND", "message": "Inspection not found."})
-    return inspection
+    return _serialize_inspection(inspection)
 
 
 # ── Upload Image ──────────────────────────────────────────
@@ -299,4 +372,49 @@ async def get_analysis(
         "error": job.error_message,
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+    }
+
+
+# ── Finalize Inspection ───────────────────────────────────
+@router.post("/{inspection_id}/finalize")
+async def finalize_inspection(
+    inspection_id: str,
+    payload: FinalizeInspectionRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(RoleName.INSPECTOR, RoleName.ADMIN)),
+):
+    inspection = await db.get(Inspection, inspection_id)
+    if not inspection:
+        raise HTTPException(404, {"code": "NOT_FOUND", "message": "Inspection not found."})
+
+    inspection.final_status = payload.final_status
+    inspection.status = InspectionStatus.FINALIZED
+    inspection.finalized_at = datetime.now(timezone.utc)
+    if payload.note:
+        existing = inspection.product_notes or ""
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        inspection.product_notes = f"{existing}\n\n[Determination by Officer {current_user.email} on {stamp}]: {payload.note}".strip()
+
+    await db.commit()
+    await db.refresh(inspection)
+
+    await audit(
+        db,
+        current_user.id,
+        "INSPECTION_FINALIZED",
+        "inspection",
+        inspection_id,
+        {
+            "final_status": inspection.final_status.value,
+            "note": payload.note,
+        },
+    )
+
+    return {
+        "id": inspection.id,
+        "status": inspection.status.value,
+        "final_status": inspection.final_status.value,
+        "finalized_at": inspection.finalized_at.isoformat() if inspection.finalized_at else None,
+        "product_notes": inspection.product_notes,
+        "message": f"Inspection determination recorded as {inspection.final_status.value}."
     }
