@@ -12,6 +12,11 @@ credentials.json
 *.sqlite
 *.sqlite3
 
+# Generated / test PDFs (never store locally — all reports go to Supabase)
+*.pdf
+test_*.pdf
+
+
 # Node & Next.js
 node_modules/
 .next/
