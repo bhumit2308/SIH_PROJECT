@@ -1,0 +1,46 @@
+# Docker build context exclusions for metra-api
+# Keeps the image lean by excluding dev/test artifacts
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Local databases (never ship SQLite to prod)
+*.db
+*.sqlite
+*.sqlite3
+
+# Test data & generated reports
+test_*.pdf
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Environment / secrets
+.env
+.env.*
+*.credentials.json
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore

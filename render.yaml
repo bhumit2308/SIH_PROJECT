@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# METRA – render.yaml
+# Infrastructure-as-Code for Render.com deployment.
+# Commit this file and Render auto-detects it when you connect the repo.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: metra-api
+    runtime: docker
+    # Dockerfile is inside services/api/ — tell Render where to look
+    rootDir: services/api
+    dockerfilePath: ./Dockerfile
+    plan: free          # free tier for hackathon; upgrade to starter for prod
+    region: oregon      # closest to Supabase ap-south-1 via Render's Oregon edge
+    branch: main
+    healthCheckPath: /health
+
+    # ── Environment Variables ──────────────────────────────────
+    # All secrets are set via Render Dashboard → Environment.
+    # This file declares keys only (no values) for documentation.
+    envVars:
+      # App
+      - key: APP_BASE_URL
+        value: https://sih-project-web.vercel.app
+      - key: API_BASE_URL
+        sync: false           # set in Render dashboard after first deploy
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+
+      # CORS — allow Vercel frontend
+      - key: CORS_ORIGINS
+        value: https://sih-project-web.vercel.app,https://sih-project-web-git-main-bhumit2308.vercel.app
+
+      # Database — Supabase PostgreSQL (set in dashboard)
+      - key: DATABASE_URL
+        sync: false
+
+      # Supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # Auth
+      - key: JWT_SECRET
+        generateValue: true   # Render auto-generates a strong random value
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+
+      # AI
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # Storage
+      - key: STORAGE_BUCKET
+        value: metra-images
+      - key: REPORT_BUCKET
+        value: metra-reports
+
+      # Worker
+      - key: WORKER_CONCURRENCY
+        value: "2"
+      - key: MAX_ANALYSIS_RETRIES
+        value: "3"
