@@ -358,9 +358,46 @@ class Report(Base):
     storage_key: Mapped[str] = mapped_column(String(500), nullable=False)
     generated_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), ForeignKey("users.id"))
     file_size_bytes: Mapped[int | None] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    # ── Metadata (populated at generation time for fast listing) ──
+    product_name: Mapped[str | None] = mapped_column(String(500))
+    category_name: Mapped[str | None] = mapped_column(String(255))
+    final_status: Mapped[str | None] = mapped_column(String(50))      # COMPLIANT / NON_COMPLIANT / REVIEW_REQUIRED
+    violation_count: Mapped[int] = mapped_column(Integer, default=0)
+    warning_count: Mapped[int] = mapped_column(Integer, default=0)
+    extracted_field_count: Mapped[int] = mapped_column(Integer, default=0)
+    download_count: Mapped[int] = mapped_column(Integer, default=0)   # total times downloaded
+    notice_ref: Mapped[str | None] = mapped_column(String(100))       # e.g. METRA/2026/ABC12345
+    report_summary: Mapped[dict | None] = mapped_column(JSON)         # structured snapshot for future lookup
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
     inspection: Mapped["Inspection"] = relationship("Inspection", back_populates="reports")
+    downloads: Mapped[list["ReportDownload"]] = relationship("ReportDownload", back_populates="report", cascade="all, delete-orphan")
+    generator: Mapped["User | None"] = relationship("User", foreign_keys=[generated_by])
+
+    __table_args__ = (
+        Index("ix_reports_generated_by_created", "generated_by", "created_at"),
+    )
+
+
+class ReportDownload(Base):
+    """Audit trail — one row per download event, per user."""
+    __tablename__ = "report_downloads"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=new_uuid)
+    report_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("reports.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), ForeignKey("users.id"))
+    ip_address: Mapped[str | None] = mapped_column(String(50))
+    user_agent: Mapped[str | None] = mapped_column(String(500))
+    downloaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+    report: Mapped["Report"] = relationship("Report", back_populates="downloads")
+    user: Mapped["User | None"] = relationship("User")
+
+    __table_args__ = (
+        Index("ix_report_downloads_user_report", "user_id", "report_id"),
+    )
 
 
 class AuditLog(Base):

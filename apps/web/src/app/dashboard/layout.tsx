@@ -5,15 +5,17 @@ import Link from 'next/link';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import {
   Scale, LayoutDashboard, ClipboardList, CircleCheck,
-  Settings, LogOut, ChevronRight, Bell, User, Shield
+  Settings, LogOut, ChevronRight, Bell, User, Shield, Archive
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['INSPECTOR','SUPERVISOR','ADMIN','MANUFACTURER'] },
   { href: '/dashboard/inspections', icon: ClipboardList, label: 'Inspections', roles: ['INSPECTOR','SUPERVISOR','ADMIN','MANUFACTURER'] },
+  { href: '/dashboard/reports', icon: Archive, label: 'Reports Library', roles: ['INSPECTOR','SUPERVISOR','ADMIN','MANUFACTURER'] },
   { href: '/dashboard/reviews', icon: CircleCheck, label: 'Review Queue', roles: ['INSPECTOR','SUPERVISOR','ADMIN'] },
   { href: '/dashboard/admin', icon: Settings, label: 'Admin', roles: ['ADMIN'] },
 ];
+
 
 function Sidebar() {
   const { user, logout, hasRole } = useAuth();

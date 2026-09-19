@@ -472,7 +472,8 @@ async def generate_and_upload_report(
     report_bucket: str,
 ) -> dict:
     """
-    Generates the PDF, uploads to Supabase, saves Report row, returns {report_id, download_url}.
+    Generates the PDF, uploads to Supabase, saves Report row with full metadata,
+    returns {report_id, download_url, notice_ref}.
     """
     from supabase import create_client
     from app.core.database import AsyncSessionLocal
@@ -483,6 +484,7 @@ async def generate_and_upload_report(
 
     report_id = str(uuid.uuid4())
     storage_key = f"reports/{inspection_id}/{report_id}.pdf"
+    notice_ref = f"METRA/{datetime.now(timezone.utc).strftime('%Y')}/{inspection_id[:8].upper()}"
 
     supabase = create_client(supabase_url, supabase_key)
     supabase.storage.from_(report_bucket).upload(
@@ -495,6 +497,37 @@ async def generate_and_upload_report(
     signed = supabase.storage.from_(report_bucket).create_signed_url(storage_key, 3600)
     download_url = signed.get("signedURL") or signed.get("signedUrl") or ""
 
+    # ── Compute metadata for fast listing ────────────────────
+    findings = inspection_data.get("findings", [])
+    violation_count = sum(1 for f in findings if f.get("status") == "VIOLATION")
+    warning_count   = sum(1 for f in findings if f.get("status") == "WARNING")
+    extracted_count = len(inspection_data.get("extracted_fields", []))
+
+    # Compact violation snapshot stored in JSON (for future search/filter)
+    violation_snapshot = [
+        {
+            "field_code": f.get("field_code"),
+            "severity":   f.get("severity"),
+            "message":    (f.get("message") or "")[:200],
+        }
+        for f in findings if f.get("status") == "VIOLATION"
+    ]
+
+    report_summary = {
+        "notice_ref":        notice_ref,
+        "product_name":      inspection_data.get("product_name"),
+        "category_name":     inspection_data.get("category_name"),
+        "final_status":      inspection_data.get("final_status"),
+        "mode":              inspection_data.get("mode"),
+        "inspector_name":    inspection_data.get("inspector_name"),
+        "organisation":      inspection_data.get("organisation"),
+        "violation_count":   violation_count,
+        "warning_count":     warning_count,
+        "extracted_count":   extracted_count,
+        "violations":        violation_snapshot,
+        "generated_at":      datetime.now(timezone.utc).isoformat(),
+    }
+
     async with AsyncSessionLocal() as db:
         report = Report(
             id=report_id,
@@ -502,9 +535,28 @@ async def generate_and_upload_report(
             storage_key=storage_key,
             generated_by=user_id,
             file_size_bytes=len(pdf_bytes),
+            # ── Metadata columns ──
+            product_name=inspection_data.get("product_name"),
+            category_name=inspection_data.get("category_name"),
+            final_status=inspection_data.get("final_status"),
+            violation_count=violation_count,
+            warning_count=warning_count,
+            extracted_field_count=extracted_count,
+            download_count=0,
+            notice_ref=notice_ref,
+            report_summary=report_summary,
         )
         db.add(report)
         await db.commit()
 
-    logger.info(f"Report {report_id} saved to DB for inspection {inspection_id}")
-    return {"report_id": report_id, "download_url": download_url, "storage_key": storage_key}
+    logger.info(f"Report {report_id} saved to DB for inspection {inspection_id} "
+                f"[violations={violation_count}, warnings={warning_count}]")
+    return {
+        "report_id":    report_id,
+        "download_url": download_url,
+        "storage_key":  storage_key,
+        "notice_ref":   notice_ref,
+        "violation_count": violation_count,
+        "warning_count":   warning_count,
+    }
+
