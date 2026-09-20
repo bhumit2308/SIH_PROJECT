@@ -37,6 +37,7 @@ class RoleName(str, enum.Enum):
 class InspectionMode(str, enum.Enum):
     INSPECTION = "INSPECTION"
     PRE_SCREENING = "PRE_SCREENING"
+    ECOMMERCE_AUDIT = "ECOMMERCE_AUDIT"
 
 
 class InspectionStatus(str, enum.Enum):

@@ -11,6 +11,9 @@ from app.reviews.router import router as reviews_router
 from app.rules.router import router as rules_router
 from app.reports.router import router as reports_router
 from app.reports.library_router import router as reports_library_router
+from app.verify.router import router as verify_router
+from app.analytics.router import router as analytics_router
+from app.ecommerce.router import router as ecommerce_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
@@ -94,5 +97,8 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(inspections_router, prefix="/api/v1/inspections", tags=["Inspections"])
 app.include_router(reports_router, prefix="/api/v1/inspections", tags=["Reports"])
 app.include_router(reports_library_router, prefix="/api/v1/reports", tags=["Reports Library"])
+app.include_router(verify_router, prefix="/api/v1/verify", tags=["Public Verification"])
+app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics & Command Center"])
+app.include_router(ecommerce_router, prefix="/api/v1/inspections", tags=["E-Commerce Compliance"])
 app.include_router(reviews_router, prefix="/api/v1/reviews", tags=["Reviews"])
 app.include_router(rules_router, prefix="/api/v1/rule-packs", tags=["Rule Packs"])

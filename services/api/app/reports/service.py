@@ -5,6 +5,7 @@ aligned with the Legal Metrology (Packaged Commodities) Rules, 2011.
 """
 import io
 import uuid
+import hashlib
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -125,6 +126,7 @@ STATUS_EMOJI   = {"PASS": "✓", "VIOLATION": "✗", "WARNING": "⚠", "REVIEW_R
 def generate_inspection_certificate(
     inspection_id: str,
     inspection_data: dict,
+    notice_ref: Optional[str] = None,
 ) -> bytes:
     """
     Build a multi-section statutory inspection certificate PDF.
@@ -401,7 +403,8 @@ def generate_inspection_certificate(
     # ─────────────────────────────────────────────────────────
     # SECTION 6 — QR Code + Officer Signature Block
     # ─────────────────────────────────────────────────────────
-    verify_url = f"https://sih-project-web.vercel.app/dashboard/inspections/{inspection_id}"
+    target_ref = notice_ref or inspection_id
+    verify_url = f"https://sih-project-web.vercel.app/verify/{target_ref}"
     qr_img = _build_qr(verify_url, size=80)
 
     sig_content = Paragraph(
@@ -479,12 +482,13 @@ async def generate_and_upload_report(
     from app.core.database import AsyncSessionLocal
     from app.core.models import Report
 
-    logger.info(f"Generating PDF report for inspection {inspection_id}")
-    pdf_bytes = generate_inspection_certificate(inspection_id, inspection_data)
+    notice_ref = f"LMPC/{datetime.now(timezone.utc).strftime('%Y')}/{inspection_id[:8].upper()}"
+    logger.info(f"Generating PDF report for inspection {inspection_id} with notice_ref {notice_ref}")
+    pdf_bytes = generate_inspection_certificate(inspection_id, inspection_data, notice_ref=notice_ref)
+    sha256_hash = hashlib.sha256(pdf_bytes).hexdigest()
 
     report_id = str(uuid.uuid4())
     storage_key = f"reports/{inspection_id}/{report_id}.pdf"
-    notice_ref = f"METRA/{datetime.now(timezone.utc).strftime('%Y')}/{inspection_id[:8].upper()}"
 
     supabase = create_client(supabase_url, supabase_key)
     supabase.storage.from_(report_bucket).upload(
@@ -525,6 +529,7 @@ async def generate_and_upload_report(
         "warning_count":     warning_count,
         "extracted_count":   extracted_count,
         "violations":        violation_snapshot,
+        "sha256_hash":       sha256_hash,
         "generated_at":      datetime.now(timezone.utc).isoformat(),
     }
 

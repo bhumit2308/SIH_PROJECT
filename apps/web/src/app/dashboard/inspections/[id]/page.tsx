@@ -831,17 +831,25 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                       </div>
                     )}
 
-                    <button
-                      className="btn btn-primary"
-                      onClick={handleDownloadReport}
-                      disabled={reportGenerating}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem' }}
-                    >
-                      {reportGenerating
-                        ? <><RefreshCw size={15} className="animate-spin" /> Generating Sealed Notice…</>
-                        : <><Download size={15} /> Download Official Sealed Notice (PDF)</>
-                      }
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleDownloadReport}
+                        disabled={reportGenerating}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem' }}
+                      >
+                        {reportGenerating
+                          ? <><RefreshCw size={15} className="animate-spin" /> Generating Sealed Notice…</>
+                          : <><Download size={15} /> Download Official Sealed Notice (PDF)</>
+                        }
+                      </button>
+
+                      <Link href={`/verify/${inspection.id}`} target="_blank" rel="noopener noreferrer">
+                        <button className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.65rem 1.1rem' }}>
+                          <ExternalLink size={15} /> Public Verification Portal ↗
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <div>
