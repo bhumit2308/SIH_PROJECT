@@ -85,8 +85,7 @@ async def verify_statutory_record(
       - report_id (UUID)
     """
     clean_ref = ref.strip().strip("/")
-    # Handle possible URL encoding or dash notation (e.g. LMPC-2026-DL-0891)
-    normalized_ref = clean_ref.replace("-", "/")
+    stripped_ref = clean_ref.replace("-", "").replace("/", "").replace(" ", "").upper()
 
     # 1. Look for Report record
     query = (
@@ -96,21 +95,21 @@ async def verify_statutory_record(
             selectinload(Report.inspection).selectinload(Inspection.findings),
             selectinload(Report.inspection).selectinload(Inspection.extracted_fields),
         )
-        .where(
-            or_(
-                Report.notice_ref == clean_ref,
-                Report.notice_ref == normalized_ref,
-                Report.notice_ref.ilike(f"%{clean_ref}%"),
-                Report.inspection_id == clean_ref,
-                Report.id == clean_ref,
-            )
-        )
         .order_by(Report.created_at.desc())
-        .limit(1)
     )
 
     res = await db.execute(query)
-    report = res.scalar_one_or_none()
+    reports = res.scalars().all()
+    report = None
+    for r in reports:
+        if r.notice_ref:
+            r_stripped = r.notice_ref.replace("-", "").replace("/", "").replace(" ", "").upper()
+            if r_stripped == stripped_ref or clean_ref.upper() == r.notice_ref.upper():
+                report = r
+                break
+        if r.inspection_id == clean_ref or r.id == clean_ref:
+            report = r
+            break
 
     if report:
         summary = report.report_summary or {}
