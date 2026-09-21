@@ -1,9 +1,12 @@
 import os
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env", extra="ignore")
+
     # App
     APP_NAME: str = "METRA API"
     VERSION: str = "0.1.0"
@@ -41,10 +44,6 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = "INFO"
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @property
     def cors_origins_list(self) -> list[str]:

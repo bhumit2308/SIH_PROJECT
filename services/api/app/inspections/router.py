@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from app.core.database import get_db
 from app.core.models import (
@@ -50,8 +50,7 @@ class InspectionOut(BaseModel):
     created_at: datetime
     rule_pack_id: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Create Inspection ─────────────────────────────────────
@@ -344,7 +343,19 @@ async def start_analysis(
     # For now, run inline for MVP
     from app.extraction.service import run_extraction_and_rules
     import asyncio
-    asyncio.create_task(run_extraction_and_rules(inspection_id, job.id))
+
+    def _on_analysis_done(task: asyncio.Task):
+        """Log unhandled exceptions from background analysis to prevent silent failures."""
+        if task.cancelled():
+            logger.warning(f"Analysis task for inspection {inspection_id} was cancelled.")
+        elif task.exception():
+            logger.exception(f"Analysis task for inspection {inspection_id} failed: {task.exception()}", exc_info=task.exception())
+
+    task = asyncio.create_task(
+        run_extraction_and_rules(inspection_id, job.id),
+        name=f"analysis-{inspection_id[:8]}"
+    )
+    task.add_done_callback(_on_analysis_done)
 
     return {"job_id": job.id, "status": "PENDING", "message": "Analysis job queued."}
 

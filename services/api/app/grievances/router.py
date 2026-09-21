@@ -48,7 +48,8 @@ router = APIRouter()
 def _generate_ticket_number() -> str:
     """Generate a high-visibility, unique statutory citizen grievance ticket."""
     suffix = secrets.token_hex(2).upper() + str(secrets.randbelow(90) + 10)
-    return f"METRA-GRV-2026-{suffix}"
+    year = datetime.now(timezone.utc).strftime("%Y")
+    return f"METRA-GRV-{year}-{suffix}"
 
 
 def _format_grievance(g: CitizenGrievance, is_officer: bool = False) -> dict:
@@ -331,7 +332,7 @@ async def convert_grievance_to_inspection(
             file_name=f"citizen_evidence_{grievance.ticket_no}.jpg",
             mime_type="image/jpeg",
             view_type=ImageViewType.FRONT,
-            quality_status=QualityStatus.PASSED,
+            quality_status=QualityStatus.PASS,
         )
         db.add(img)
 

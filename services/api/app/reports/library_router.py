@@ -262,9 +262,9 @@ async def compound_statutory_notice(
         raise HTTPException(409, f"Already compounded under Certificate {report.compounding_cert_ref}.")
 
     cert_suffix = secrets.token_hex(2).upper() + str(secrets.randbelow(900) + 100)
-    cert_ref = f"LMPC/COMP/2026/{cert_suffix}"
-
     now = datetime.now(timezone.utc)
+    cert_ref = f"LMPC/COMP/{now.strftime('%Y')}/{cert_suffix}"
+
     report.compounding_status = "COMPOUNDED"
     report.treasury_challan_no = payload.treasury_challan_no.strip()
     report.compounded_amount = payload.compounded_amount
