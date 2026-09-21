@@ -5,7 +5,7 @@ import { useAuth, apiRequest } from '@/lib/auth';
 import {
   UploadCloud, ArrowLeft, CheckCircle2, AlertCircle,
   Camera, Image as ImageIcon, Trash2, Sparkles, Scale, Info, Loader2,
-  ShoppingBag, Package, ExternalLink, ShieldAlert
+  ShoppingBag, Package, ExternalLink, ShieldAlert, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -112,6 +112,41 @@ function NewInspectionForm() {
   const [ecomMfr, setEcomMfr] = useState('');
   const [ecomCare, setEcomCare] = useState('');
   const [ecomNotes, setEcomNotes] = useState('');
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [fetchNotice, setFetchNotice] = useState<string | null>(null);
+
+  const handleAutoFetchListing = async () => {
+    if (!ecomUrl.trim()) {
+      setError('Please paste an e-commerce or dark-store product URL first.');
+      return;
+    }
+    setError(null);
+    setIsFetchingUrl(true);
+    setFetchNotice(null);
+    try {
+      const data = await apiRequest<any>('/api/v1/inspections/ecommerce-fetch', {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ url: ecomUrl.trim() }),
+      });
+      if (data) {
+        if (data.platform && data.platform !== 'OTHER') {
+          setEcomPlatform(data.platform);
+        }
+        if (data.product_name) setEcomProductName(data.product_name);
+        if (data.declared_net_qty) setEcomNetQty(data.declared_net_qty);
+        if (data.declared_mrp) setEcomMrp(data.declared_mrp);
+        if (data.declared_origin) setEcomOrigin(data.declared_origin);
+        if (data.declared_manufacturer) setEcomMfr(data.declared_manufacturer);
+        if (data.declared_consumer_care) setEcomCare(data.declared_consumer_care);
+        setFetchNotice(data.notice || `Declarations extracted from ${data.platform} (${data.tier_used}).`);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to auto-fetch product declarations.');
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -569,10 +604,77 @@ function NewInspectionForm() {
 
             {/* E-Commerce Audit Form */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShoppingBag size={18} color="var(--accent)" />
-                Rule 6(10) Digital Declarations Audit
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShoppingBag size={18} color="var(--accent)" />
+                  Rule 6(10) Digital Declarations Audit
+                </h2>
+                <span className="badge badge-info" style={{ fontSize: '0.72rem' }}>
+                  Live Scraper &amp; Meta-Extractor Ready
+                </span>
+              </div>
+
+              {/* 1-Click Live Scraper Bar */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+              }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
+                  Marketplace / Dark-Store Product URL *
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. https://www.amazon.in/dp/B01H... or https://blinkit.com/prn/..."
+                    value={ecomUrl}
+                    onChange={(e) => setEcomUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAutoFetchListing();
+                      }
+                    }}
+                    style={{ flex: 1, minWidth: '260px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAutoFetchListing}
+                    disabled={isFetchingUrl}
+                    className="btn btn-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontSize: '0.8rem',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Zap size={14} className={isFetchingUrl ? 'animate-spin' : ''} />
+                    {isFetchingUrl ? 'Extracting Metadata…' : '⚡ Auto-Fetch & Extract'}
+                  </button>
+                </div>
+                {fetchNotice && (
+                  <div style={{
+                    marginTop: '0.6rem',
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: '6px',
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    color: 'var(--success)',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}>
+                    <CheckCircle2 size={14} />
+                    <span>{fetchNotice}</span>
+                  </div>
+                )}
+              </div>
 
               <div className="grid-2" style={{ gap: '1.25rem' }}>
                 <div>
@@ -590,6 +692,7 @@ function NewInspectionForm() {
                     <option value="AMAZON">Amazon India (Marketplace)</option>
                     <option value="FLIPKART">Flipkart (Marketplace)</option>
                     <option value="BIGBASKET">BigBasket (E-Grocery)</option>
+                    <option value="JIOMART">JioMart (E-Commerce)</option>
                     <option value="OTHER">Other E-Commerce Platform</option>
                   </select>
                 </div>
@@ -624,18 +727,6 @@ function NewInspectionForm() {
                   />
                 </div>
 
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                    Product Page URL *
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    placeholder="https://zeptonow.com/pn/..."
-                    value={ecomUrl}
-                    onChange={(e) => setEcomUrl(e.target.value)}
-                  />
-                </div>
 
                 {/* Statutory Check inputs */}
                 <div>

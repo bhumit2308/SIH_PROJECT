@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+class ECommerceFetchRequest(BaseModel):
+    url: str
+
+
 class ECommerceAuditRequest(BaseModel):
     platform: str                    # BLINKIT, ZEPTO, INSTAMART, AMAZON, FLIPKART, BIGBASKET, OTHER
     product_url: str
@@ -41,6 +45,25 @@ class ECommerceAuditRequest(BaseModel):
     declared_manufacturer: Optional[str] = None
     declared_consumer_care: Optional[str] = None
     notes: Optional[str] = None
+
+
+@router.post("/ecommerce-fetch")
+async def fetch_ecommerce_listing(
+    payload: ECommerceFetchRequest,
+    current_user: User = Depends(require_role(
+        RoleName.INSPECTOR, RoleName.SUPERVISOR, RoleName.ADMIN, RoleName.MANUFACTURER
+    )),
+):
+    """
+    1-Click Auto-Fetch for E-Commerce & Quick-Commerce listings.
+    Uses resilient 3-tier scraper to extract pre-sale Rule 6(10) statutory declarations.
+    """
+    if not payload.url or not payload.url.startswith("http"):
+        raise HTTPException(400, "Please provide a valid http/https product URL.")
+
+    from app.ecommerce.scraper import scrape_ecommerce_product
+    data = await scrape_ecommerce_product(payload.url)
+    return data
 
 
 @router.post("/ecommerce-audit", status_code=201)

@@ -72,3 +72,38 @@ async def test_ecommerce_audit_unauthenticated(async_client: AsyncClient):
     }
     res = await async_client.post("/api/v1/inspections/ecommerce-audit", json=payload)
     assert res.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_ecommerce_fetch_amazon_url(async_client: AsyncClient, auth_headers: dict):
+    """Test 1-click scraper on an Amazon URL extracting ASIN, title and net qty."""
+    url = "https://www.amazon.in/Tata-Salt-Vacuum-Evaporated-1kg/dp/B01H52914G"
+    res = await async_client.post(
+        "/api/v1/inspections/ecommerce-fetch",
+        json={"url": url},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["platform"] == "AMAZON"
+    assert "Tata Salt" in data["product_name"]
+    assert data["declared_net_qty"].lower() == "1kg"
+    assert data["asin_or_sku"] == "B01H52914G"
+
+
+@pytest.mark.asyncio
+async def test_ecommerce_fetch_blinkit_url(async_client: AsyncClient, auth_headers: dict):
+    """Test 1-click scraper on a Blinkit URL extracting product slug and net qty."""
+    url = "https://blinkit.com/prn/fortune-sunlite-refined-sunflower-oil-1-l/prid/88219"
+    res = await async_client.post(
+        "/api/v1/inspections/ecommerce-fetch",
+        json={"url": url},
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["platform"] == "BLINKIT"
+    assert "Sunflower Oil" in data["product_name"]
+    assert "1 L" in data["declared_net_qty"]
+    assert data["asin_or_sku"] == "88219"
+

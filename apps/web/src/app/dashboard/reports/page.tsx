@@ -6,7 +6,7 @@ import {
   FileText, Download, AlertTriangle, CheckCircle2, Clock,
   RefreshCw, Search, Filter, ExternalLink, Eye,
   Shield, AlertCircle, TrendingDown, Archive, Calendar,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Scale, Gavel
 } from 'lucide-react';
 
 interface ReportItem {
@@ -24,6 +24,14 @@ interface ReportItem {
   created_at: string;
   generated_by_name: string | null;
   generated_by_email: string | null;
+  compounding_status?: string | null;
+  treasury_challan_no?: string | null;
+  compounded_amount?: number | null;
+  compounded_at?: string | null;
+  compounding_cert_ref?: string | null;
+  days_since_notice?: number;
+  show_cause_days_remaining?: number;
+  is_show_cause_expired?: boolean;
 }
 
 interface ReportsResponse {
@@ -65,9 +73,62 @@ export default function ReportsLibraryPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const PAGE_SIZE = 20;
 
+  // Section 48 Compounding Ledger State
+  const [compoundTarget, setCompoundTarget] = useState<ReportItem | null>(null);
+  const [challanNo, setChallanNo] = useState('');
+  const [compoundAmount, setCompoundAmount] = useState('25000');
+  const [submittingCompound, setSubmittingCompound] = useState(false);
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 5000);
+  };
+
+  const handleRecordCompounding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!compoundTarget || !token) return;
+    if (!challanNo.trim()) {
+      showToast('Please enter the Treasury Challan Number.', false);
+      return;
+    }
+    setSubmittingCompound(true);
+    try {
+      const res = await apiRequest<any>(`/api/v1/reports/${compoundTarget.id}/compound`, {
+        token,
+        method: 'POST',
+        body: JSON.stringify({
+          treasury_challan_no: challanNo.trim(),
+          compounded_amount: parseFloat(compoundAmount) || 25000.0,
+        }),
+      });
+      showToast(`Notice ${compoundTarget.notice_ref || ''} compounded successfully! Certificate: ${res.compounding_cert_ref}`, true);
+      setCompoundTarget(null);
+      setChallanNo('');
+      fetchReports();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to record compounding payment.', false);
+    } finally {
+      setSubmittingCompound(false);
+    }
+  };
+
+  const handleEscalateCjm = async (report: ReportItem) => {
+    if (!token) return;
+    const confirmEsc = window.confirm(
+      `Confirm escalating statutory notice ${report.notice_ref || report.id.slice(0, 8)} to the Court of Chief Judicial Magistrate (CJM) for formal criminal prosecution under Section 36(1)?`
+    );
+    if (!confirmEsc) return;
+
+    try {
+      await apiRequest<any>(`/api/v1/reports/${report.id}/escalate-cjm`, {
+        token,
+        method: 'POST',
+      });
+      showToast(`Case ${report.notice_ref || ''} successfully escalated to CJM Court.`, true);
+      fetchReports();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to escalate notice to CJM.', false);
+    }
   };
 
   const fetchReports = async (reset = false) => {
@@ -246,7 +307,7 @@ export default function ReportsLibraryPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
               <thead>
                 <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-                  {['Notice Ref', 'Product / Category', 'Status', 'Violations', 'Downloads', 'Size', 'Generated', 'Actions'].map(h => (
+                  {['Notice Ref', 'Product / Category', 'Status', 'Sec 48 Settlement / CJM', 'Violations', 'Downloads', 'Size', 'Generated', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.73rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       {h}
                     </th>
@@ -295,6 +356,72 @@ export default function ReportsLibraryPage() {
                         }}>
                           <Icon size={11} /> {cfg.label}
                         </span>
+                      </td>
+
+                      {/* Section 48 Compounding Ledger Status */}
+                      <td style={{ padding: '0.85rem 1rem', minWidth: '170px' }}>
+                        {report.final_status !== 'NON_COMPLIANT' ? (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>—</span>
+                        ) : report.compounding_status === 'COMPOUNDED' ? (
+                          <div>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                              padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700,
+                              background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)'
+                            }}>
+                              ✓ Compounded (Sec 48)
+                            </span>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontFamily: 'monospace' }}>
+                              ₹{report.compounded_amount?.toLocaleString() || '25,000'} • {report.treasury_challan_no?.slice(0, 14)}…
+                            </div>
+                          </div>
+                        ) : report.compounding_status === 'ESCALATED_TO_CJM' ? (
+                          <div>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                              padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700,
+                              background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)'
+                            }}>
+                              ⚖️ Prosecuted in CJM Court
+                            </span>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                              Under Section 36(1)
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                              padding: '0.15rem 0.45rem', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 600,
+                              background: report.is_show_cause_expired ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                              color: report.is_show_cause_expired ? '#ef4444' : '#f59e0b',
+                              marginBottom: '0.35rem',
+                            }}>
+                              {report.is_show_cause_expired ? '⚠️ 15d Expired' : `⏳ Show-Cause: ${report.show_cause_days_remaining ?? 15}d left`}
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.3rem' }}>
+                              <button
+                                onClick={() => {
+                                  setCompoundTarget(report);
+                                  setChallanNo('');
+                                }}
+                                className="btn btn-secondary"
+                                style={{ padding: '0.2rem 0.45rem', fontSize: '0.68rem' }}
+                                title="Record Treasury Challan Settlement"
+                              >
+                                Record Challan
+                              </button>
+                              <button
+                                onClick={() => handleEscalateCjm(report)}
+                                className="btn btn-ghost"
+                                style={{ padding: '0.2rem 0.45rem', fontSize: '0.68rem', color: '#ef4444' }}
+                                title="Escalate to Chief Judicial Magistrate"
+                              >
+                                CJM ↗
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Violations */}
@@ -431,11 +558,92 @@ export default function ReportsLibraryPage() {
             <Download size={13} color="var(--accent)" />
             <span>Download links are signed and expire after 1 hour for security</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <FileText size={13} color="var(--accent)" />
-            <span>Each download is logged with timestamp, user ID, and IP address</span>
-          </div>
         </div>
+
+        {/* ── Section 48 Compounding Settlement Modal ── */}
+        {compoundTarget && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}>
+            <form onSubmit={handleRecordCompounding} className="card animate-fade" style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '1.75rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <Scale size={20} color="var(--accent)" />
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+                  Section 48 Compounding Settlement
+                </h2>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.4 }}>
+                Under Section 48 of the Legal Metrology Act, 2009, record the Treasury Challan (e-Challan / Bharatkosh) deposited by the offender to discharge notice <strong>{compoundTarget.notice_ref || compoundTarget.id.slice(0, 8)}</strong> from criminal prosecution.
+              </p>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  Treasury Challan / Bharatkosh Reference No. *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. BHARATKOSH/2026/DL/88219"
+                  className="input"
+                  value={challanNo}
+                  onChange={(e) => setChallanNo(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  Compounded Amount (₹) *
+                </label>
+                <input
+                  type="number"
+                  className="input"
+                  value={compoundAmount}
+                  onChange={(e) => setCompoundAmount(e.target.value)}
+                  required
+                />
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  Statutory compounding fee for first offence under Section 36(1) is ₹25,000.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setCompoundTarget(null)}
+                  className="btn btn-secondary"
+                  disabled={submittingCompound}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submittingCompound}
+                >
+                  {submittingCompound ? 'Recording Settlement…' : 'Record & Issue Discharge Certificate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </>
   );

@@ -14,6 +14,7 @@ from app.reports.library_router import router as reports_library_router
 from app.verify.router import router as verify_router
 from app.analytics.router import router as analytics_router
 from app.ecommerce.router import router as ecommerce_router
+from app.grievances.router import router as grievances_router
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
@@ -22,12 +23,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _ensure_schema(sync_conn):
+    """Safely apply non-destructive column additions to existing dev and prod DBs."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(sync_conn)
+    tables = inspector.get_table_names()
+    if "reports" in tables:
+        cols = {c["name"] for c in inspector.get_columns("reports")}
+        for col, dtype in [
+            ("compounding_status", "VARCHAR(50) DEFAULT 'SHOW_CAUSE_AWAITED'"),
+            ("treasury_challan_no", "VARCHAR(100)"),
+            ("compounded_amount", "FLOAT"),
+            ("compounded_at", "TIMESTAMP"),
+            ("compounding_cert_ref", "VARCHAR(100)"),
+        ]:
+            if col not in cols:
+                try:
+                    sync_conn.execute(text(f"ALTER TABLE reports ADD COLUMN {col} {dtype}"))
+                except Exception as e:
+                    logger.warning(f"Could not add column {col} to reports: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("METRA API starting up...")
     # Tables auto-created in dev; use migrations in production
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_ensure_schema)
     logger.info("Database ready.")
     yield
     logger.info("METRA API shutting down.")
@@ -102,3 +125,4 @@ app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytic
 app.include_router(ecommerce_router, prefix="/api/v1/inspections", tags=["E-Commerce Compliance"])
 app.include_router(reviews_router, prefix="/api/v1/reviews", tags=["Reviews"])
 app.include_router(rules_router, prefix="/api/v1/rule-packs", tags=["Rule Packs"])
+app.include_router(grievances_router, prefix="/api/v1/grievances", tags=["Citizen Grievances & Whistleblower"])

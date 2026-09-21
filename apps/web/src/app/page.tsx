@@ -150,7 +150,37 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+        {/* Public Access Channels */}
+        <div style={{
+          marginTop: '1.75rem',
+          paddingTop: '1.25rem',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.6rem',
+        }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'center', letterSpacing: '0.04em' }}>
+            Public Citizen Services
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <a
+              href="/report-violation"
+              className="btn btn-secondary"
+              style={{ padding: '0.45rem 0.6rem', fontSize: '0.72rem', textAlign: 'center', justifyContent: 'center' }}
+            >
+              📢 Report Violation
+            </a>
+            <a
+              href="/verify"
+              className="btn btn-secondary"
+              style={{ padding: '0.45rem 0.6rem', fontSize: '0.72rem', textAlign: 'center', justifyContent: 'center' }}
+            >
+              🔍 Verify Notice
+            </a>
+          </div>
+        </div>
+
+        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
           Ministry of Consumer Affairs · Government of India
         </p>
       </div>

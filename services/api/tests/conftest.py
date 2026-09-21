@@ -12,7 +12,7 @@ dotenv.load_dotenv(os.path.join(SERVICES_API_DIR, ".env"))
 if SERVICES_API_DIR not in sys.path:
     sys.path.insert(0, SERVICES_API_DIR)
 
-from app.main import app
+from app.main import app, _ensure_schema
 from app.core.database import AsyncSessionLocal, engine, Base
 from app.core.models import User, Role, UserRole, RoleName
 from app.auth.dependencies import create_access_token
@@ -23,6 +23,7 @@ async def init_test_db():
     """Ensure all tables exist before running test suite."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_ensure_schema)
     yield
 
 

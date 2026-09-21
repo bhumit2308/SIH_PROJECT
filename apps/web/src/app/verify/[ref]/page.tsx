@@ -48,6 +48,11 @@ interface VerificationData {
     compounding_section: string;
     statutory_compounding_fee: number;
     show_cause_period_days: number;
+    compounding_status?: string;
+    treasury_challan_no?: string | null;
+    compounded_amount?: number | null;
+    compounded_at?: string | null;
+    compounding_cert_ref?: string | null;
     prosecution_clause: string;
   };
   download_url: string;
@@ -306,37 +311,89 @@ export default function StatutoryVerificationPage() {
 
             {/* Legal Consequences & Section 48 Compounding Notice */}
             {data.final_status === 'NON_COMPLIANT' && (
-              <div className="card" style={{ padding: '1.5rem', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                  <Scale size={20} color="#ef4444" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f87171' }}>
-                    Statutory Compounding Notice (Section 48, Legal Metrology Act, 2009)
-                  </h3>
+              data.legal_consequences.compounding_status === 'COMPOUNDED' ? (
+                <div className="card" style={{ padding: '1.5rem', borderColor: 'rgba(34, 197, 94, 0.4)', background: 'rgba(34, 197, 94, 0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                    <ShieldCheck size={22} color="#22c55e" />
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#4ade80' }}>
+                      Offence Compounded &amp; Discharged (Section 48, Legal Metrology Act, 2009)
+                    </h3>
+                  </div>
+                  <div className="grid-3" style={{ gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Compounding Certificate</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#4ade80', fontFamily: 'monospace' }}>
+                        {data.legal_consequences.compounding_cert_ref || 'LMPC/COMP/2026/...'}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Treasury Challan Ref</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#e2e8f0', fontFamily: 'monospace' }}>
+                        {data.legal_consequences.treasury_challan_no || 'Verified e-Challan'}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Settled Penalty Amount</span>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4ade80' }}>
+                        ₹{(data.legal_consequences.compounded_amount || 25000).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {data.legal_consequences.prosecution_clause}
+                  </p>
                 </div>
-                <div className="grid-3" style={{ gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Assessed Compounding Fee</span>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fca5a5' }}>
-                      ₹{data.legal_consequences.statutory_compounding_fee.toLocaleString('en-IN')}
-                    </span>
+              ) : data.legal_consequences.compounding_status === 'ESCALATED_TO_CJM' ? (
+                <div className="card" style={{ padding: '1.5rem', borderColor: 'rgba(239, 68, 68, 0.5)', background: 'rgba(239, 68, 68, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                    <Scale size={22} color="#ef4444" />
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f87171' }}>
+                      Prosecution Instituted Before Chief Judicial Magistrate (Section 36(1))
+                    </h3>
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Show Cause Period</span>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fca5a5' }}>
-                      {data.legal_consequences.show_cause_period_days} Days
-                    </span>
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status of Statutory Notice:</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fca5a5', marginTop: '0.2rem' }}>
+                      CRIMINAL PROSECUTION COMPLAINT FILED (NON-COMPOUNDED OFFENCE)
+                    </div>
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Statutory Section</span>
-                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#e2e8f0' }}>
-                      {data.legal_consequences.compounding_section}
-                    </span>
-                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {data.legal_consequences.prosecution_clause}
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  {data.legal_consequences.prosecution_clause}
-                </p>
-              </div>
+              ) : (
+                <div className="card" style={{ padding: '1.5rem', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                    <Scale size={20} color="#ef4444" />
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f87171' }}>
+                      Statutory Compounding Notice (Section 48, Legal Metrology Act, 2009)
+                    </h3>
+                  </div>
+                  <div className="grid-3" style={{ gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Assessed Compounding Fee</span>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fca5a5' }}>
+                        ₹{data.legal_consequences.statutory_compounding_fee.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Show Cause Period</span>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fca5a5' }}>
+                        {data.legal_consequences.show_cause_period_days} Days
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Statutory Section</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 700, color: '#e2e8f0' }}>
+                        {data.legal_consequences.compounding_section}
+                      </span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    {data.legal_consequences.prosecution_clause}
+                  </p>
+                </div>
+              )
             )}
 
             {/* Official Footer */}

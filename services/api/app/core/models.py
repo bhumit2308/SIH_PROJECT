@@ -371,6 +371,13 @@ class Report(Base):
     notice_ref: Mapped[str | None] = mapped_column(String(100))       # e.g. METRA/2026/ABC12345
     report_summary: Mapped[dict | None] = mapped_column(JSON)         # structured snapshot for future lookup
 
+    # ── Section 48 Compounding Settlement & Legal Prosecution Tracking ──
+    compounding_status: Mapped[str | None] = mapped_column(String(50), default="SHOW_CAUSE_AWAITED")  # SHOW_CAUSE_AWAITED, COMPOUNDED, ESCALATED_TO_CJM, REJECTED
+    treasury_challan_no: Mapped[str | None] = mapped_column(String(100))
+    compounded_amount: Mapped[float | None] = mapped_column(Float)
+    compounded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    compounding_cert_ref: Mapped[str | None] = mapped_column(String(100))
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
     inspection: Mapped["Inspection"] = relationship("Inspection", back_populates="reports")
@@ -418,3 +425,27 @@ class AuditLog(Base):
     __table_args__ = (
         Index("ix_audit_entity_created", "entity_type", "entity_id", "created_at"),
     )
+
+
+class CitizenGrievance(Base):
+    """Citizen Whistleblower reports for Legal Metrology violations."""
+    __tablename__ = "citizen_grievances"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=new_uuid)
+    ticket_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    citizen_name: Mapped[str | None] = mapped_column(String(255))
+    citizen_contact: Mapped[str | None] = mapped_column(String(255))
+    violation_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    product_name: Mapped[str] = mapped_column(String(500), nullable=False)
+    store_name: Mapped[str | None] = mapped_column(String(255))
+    store_location: Mapped[str | None] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
+    evidence_storage_key: Mapped[str | None] = mapped_column(String(500))
+    evidence_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(50), default="RECEIVED", index=True)  # RECEIVED, UNDER_FIELD_INSPECTION, RESOLVED_WITH_PENALTY, DISMISSED
+    inspection_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), ForeignKey("inspections.id", ondelete="SET NULL"))
+    resolution_notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    inspection: Mapped["Inspection | None"] = relationship("Inspection")

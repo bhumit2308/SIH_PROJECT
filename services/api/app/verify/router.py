@@ -189,7 +189,24 @@ async def verify_statutory_record(
                 "compounding_section": "Section 48, Legal Metrology Act, 2009",
                 "statutory_compounding_fee": 25000 if is_violation else 0,
                 "show_cause_period_days": 15 if is_violation else 0,
-                "prosecution_clause": "In case of failure to compound within 15 days of notice, prosecution will be instituted before the competent Chief Judicial Magistrate Court under Section 36(1) of the Act." if is_violation else "Commodity certified as compliant with all mandatory labeling norms."
+                "compounding_status": report.compounding_status or "SHOW_CAUSE_AWAITED",
+                "treasury_challan_no": report.treasury_challan_no,
+                "compounded_amount": report.compounded_amount,
+                "compounded_at": report.compounded_at.isoformat() if report.compounded_at else None,
+                "compounding_cert_ref": report.compounding_cert_ref,
+                "prosecution_clause": (
+                    "Offence compounded and discharged under Section 48. Criminal proceedings barred."
+                    if report.compounding_status == "COMPOUNDED"
+                    else (
+                        "Prosecution complaint instituted before the Court of the Chief Judicial Magistrate (CJM) under Section 36(1)."
+                        if report.compounding_status == "ESCALATED_TO_CJM"
+                        else (
+                            "In case of failure to compound within 15 days of notice, prosecution will be instituted before the competent Chief Judicial Magistrate Court under Section 36(1) of the Act."
+                            if is_violation
+                            else "Commodity certified as compliant with all mandatory labeling norms."
+                        )
+                    )
+                ),
             },
             "download_url": download_url,
         }

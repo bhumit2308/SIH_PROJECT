@@ -16,13 +16,26 @@ from app.core.database import get_db
 from app.core.models import Report, ReportDownload, RoleName, User
 from app.core.config import settings
 from app.auth.dependencies import get_current_user
+from app.audit.logger import audit
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+import secrets
+from pydantic import BaseModel, Field
 
 def _format_report(r: Report) -> dict:
     """Serialize a Report ORM object to a clean API response dict."""
+    now = datetime.now(timezone.utc)
+    if r.created_at:
+        created_at = r.created_at if r.created_at.tzinfo else r.created_at.replace(tzinfo=timezone.utc)
+        days_since = (now - created_at).days
+    else:
+        days_since = 0
+    show_cause_days_remaining = max(0, 15 - days_since)
+    is_show_cause_expired = bool(days_since > 15 and (not r.compounding_status or r.compounding_status == "SHOW_CAUSE_AWAITED"))
+
+
     return {
         "id":                   r.id,
         "inspection_id":        r.inspection_id,
@@ -38,6 +51,15 @@ def _format_report(r: Report) -> dict:
         "created_at":           r.created_at.isoformat() if r.created_at else None,
         "generated_by_name":    r.generator.full_name if r.generator else None,
         "generated_by_email":   r.generator.email if r.generator else None,
+        # Section 48 Compounding & CJM Prosecution
+        "compounding_status":   r.compounding_status or "SHOW_CAUSE_AWAITED",
+        "treasury_challan_no":  r.treasury_challan_no,
+        "compounded_amount":    r.compounded_amount,
+        "compounded_at":        r.compounded_at.isoformat() if r.compounded_at else None,
+        "compounding_cert_ref": r.compounding_cert_ref,
+        "days_since_notice":    days_since,
+        "show_cause_days_remaining": show_cause_days_remaining,
+        "is_show_cause_expired": is_show_cause_expired,
     }
 
 
@@ -204,3 +226,117 @@ async def download_report(
         "notice_ref":   report.notice_ref,
         "expires_in":   3600,
     }
+
+
+# ── POST /api/v1/reports/{report_id}/compound ────────────────
+class CompoundingRequest(BaseModel):
+    treasury_challan_no: str
+    compounded_amount: float = 25000.0
+    notes: str | None = None
+
+
+@router.post("/{report_id}/compound")
+async def compound_statutory_notice(
+    report_id: str,
+    payload: CompoundingRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Section 48 Compounding Settlement Ledger:
+    Records Treasury Challan / Bharatkosh payment of compounding fee.
+    Discharges notice from criminal prosecution and issues official certificate LMPC/COMP/2026/XXXX.
+    """
+    user_roles = {ur.role.name.value for ur in current_user.user_roles}
+    if not (user_roles & {"ADMIN", "SUPERVISOR", "INSPECTOR"}):
+        raise HTTPException(403, "Only enforcement officers may record compounding settlements.")
+
+    report = await db.get(Report, report_id)
+    if not report:
+        raise HTTPException(404, "Report not found.")
+
+    if report.final_status != "NON_COMPLIANT":
+        raise HTTPException(400, "Only non-compliant notices can be compounded.")
+
+    if report.compounding_status == "COMPOUNDED":
+        raise HTTPException(409, f"Already compounded under Certificate {report.compounding_cert_ref}.")
+
+    cert_suffix = secrets.token_hex(2).upper() + str(secrets.randbelow(900) + 100)
+    cert_ref = f"LMPC/COMP/2026/{cert_suffix}"
+
+    now = datetime.now(timezone.utc)
+    report.compounding_status = "COMPOUNDED"
+    report.treasury_challan_no = payload.treasury_challan_no.strip()
+    report.compounded_amount = payload.compounded_amount
+    report.compounded_at = now
+    report.compounding_cert_ref = cert_ref
+
+    await db.commit()
+    await db.refresh(report)
+
+    await audit(db, current_user.id, "REPORT_COMPOUNDED", "report", report.id, {
+        "notice_ref": report.notice_ref,
+        "compounding_cert_ref": cert_ref,
+        "treasury_challan_no": payload.treasury_challan_no,
+        "compounded_amount": payload.compounded_amount,
+    })
+
+    return {
+        "success": True,
+        "message": f"Offence under notice {report.notice_ref} successfully compounded under Section 48.",
+        "compounding_cert_ref": cert_ref,
+        "compounding_status": report.compounding_status,
+        "treasury_challan_no": report.treasury_challan_no,
+        "compounded_amount": report.compounded_amount,
+        "compounded_at": report.compounded_at.isoformat(),
+        "report": _format_report(report),
+    }
+
+
+# ── POST /api/v1/reports/{report_id}/escalate-cjm ───────────
+class CJMEscalationRequest(BaseModel):
+    court_name: str | None = "Court of Chief Judicial Magistrate (CJM)"
+    notes: str | None = None
+
+
+@router.post("/{report_id}/escalate-cjm")
+async def escalate_to_cjm_court(
+    report_id: str,
+    payload: CJMEscalationRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Escalates uncompounded show-cause notices past 15 days to the Court of
+    the Chief Judicial Magistrate (CJM) for formal criminal prosecution under Section 36(1).
+    """
+    user_roles = {ur.role.name.value for ur in current_user.user_roles}
+    if not (user_roles & {"ADMIN", "SUPERVISOR", "INSPECTOR"}):
+        raise HTTPException(403, "Only enforcement officers may escalate cases for prosecution.")
+
+    report = await db.get(Report, report_id)
+    if not report:
+        raise HTTPException(404, "Report not found.")
+
+    if report.final_status != "NON_COMPLIANT":
+        raise HTTPException(400, "Only non-compliant notices with established violations can be escalated.")
+
+    if report.compounding_status == "COMPOUNDED":
+        raise HTTPException(409, "Offence has already been compounded under Section 48; prosecution barred by law.")
+
+    report.compounding_status = "ESCALATED_TO_CJM"
+    await db.commit()
+    await db.refresh(report)
+
+    await audit(db, current_user.id, "PROSECUTION_ESCALATED_CJM", "report", report.id, {
+        "notice_ref": report.notice_ref,
+        "court_name": payload.court_name if payload else "Chief Judicial Magistrate",
+    })
+
+    return {
+        "success": True,
+        "message": f"Case {report.notice_ref} escalated for criminal prosecution under Section 36(1) before Chief Judicial Magistrate.",
+        "compounding_status": report.compounding_status,
+        "report": _format_report(report),
+    }
+
