@@ -56,9 +56,9 @@ function Sidebar() {
       <div className="px-4 py-2.5 bg-[#070b14] border-b border-[#1e293b] flex items-center justify-between text-[11px] font-mono">
         <span className="text-slate-400 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          GRID: DL-CENTRAL
+          GRID: {user?.organisation ? user.organisation.toUpperCase() : 'NATIONAL REGISTRY'}
         </span>
-        <span className="text-indigo-400 font-semibold">SECURE</span>
+        <span className="text-indigo-400 font-semibold">ACTIVE</span>
       </div>
 
       {/* ── Navigation Links ── */}
@@ -104,10 +104,10 @@ function Sidebar() {
           </div>
           <div className="overflow-hidden">
             <div className="text-xs font-semibold text-slate-200 truncate">
-              {user?.full_name ?? user?.email ?? 'Enforcement Officer'}
+              {user?.full_name ?? user?.email ?? 'Authorized Officer'}
             </div>
             <div className="text-[10px] font-mono text-slate-400 truncate">
-              ID: LM-{user?.id?.slice(0, 6).toUpperCase() || '8842-DL'}
+              ID: {user?.id ? user.id.slice(0, 8).toUpperCase() : 'AUTH'}
             </div>
           </div>
         </div>
@@ -184,11 +184,11 @@ function ProtectedLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-4 text-xs font-mono">
               <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#131d33] border border-[#1e293b] text-slate-300">
                 <Clock size={13} className="text-indigo-400" />
-                <span>{time || '18:00:00 IST'}</span>
+                <span>{time || 'Live IST'}</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/50 border border-emerald-800/40 text-emerald-400">
                 <Radio size={13} />
-                <span className="text-[11px]">Synced: CCA Database</span>
+                <span className="text-[11px]">Database Active</span>
               </div>
             </div>
           </header>

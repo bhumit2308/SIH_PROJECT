@@ -134,10 +134,10 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              {greeting()}, {user?.full_name?.split(' ')[0] ?? 'Inspector'}
+              {greeting()}, {user?.full_name?.split(' ')[0] ?? 'Officer'}
             </h1>
             <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              JURISDICTION: DL-CENTRAL
+              {user?.organisation ? `DIVISION: ${user.organisation.toUpperCase()}` : 'NATIONAL ENFORCEMENT'}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">

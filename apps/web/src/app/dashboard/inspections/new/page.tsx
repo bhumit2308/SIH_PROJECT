@@ -422,7 +422,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. Haldiram's Bhujia 500g or Batch #DL2026-B8"
+                    placeholder="Enter product name or batch identifier"
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
                   />
@@ -629,7 +629,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. https://www.amazon.in/dp/B01H... or https://blinkit.com/prn/..."
+                    placeholder="https://..."
                     value={ecomUrl}
                     onChange={(e) => setEcomUrl(e.target.value)}
                     onKeyDown={(e) => {
@@ -721,7 +721,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. Premium California Whole Cashews 250g"
+                    placeholder="Enter product or commodity title"
                     value={ecomProductName}
                     onChange={(e) => setEcomProductName(e.target.value)}
                   />
@@ -736,7 +736,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. ₹349 (incl. of all taxes) or leave blank if omitted"
+                    placeholder="Enter declared MRP (e.g. ₹ per unit)"
                     value={ecomMrp}
                     onChange={(e) => setEcomMrp(e.target.value)}
                   />
@@ -749,7 +749,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. ₹1.40/g (Leave empty to flag omission)"
+                    placeholder="Enter unit sale price (or leave empty if omitted)"
                     value={ecomUsp}
                     onChange={(e) => setEcomUsp(e.target.value)}
                   />
@@ -762,7 +762,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. 250 g or 1 L"
+                    placeholder="Enter declared net quantity with units"
                     value={ecomNetQty}
                     onChange={(e) => setEcomNetQty(e.target.value)}
                   />
@@ -775,7 +775,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. India (Leave empty to flag omission)"
+                    placeholder="Enter country of origin"
                     value={ecomOrigin}
                     onChange={(e) => setEcomOrigin(e.target.value)}
                   />
@@ -788,7 +788,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. 12/2026 (Leave empty to flag omission)"
+                    placeholder="MM/YYYY or best before declaration"
                     value={ecomExpiry}
                     onChange={(e) => setEcomExpiry(e.target.value)}
                   />
@@ -801,7 +801,7 @@ function NewInspectionForm() {
                   <input
                     type="text"
                     className="input"
-                    placeholder="e.g. DryFruits India Ltd, Mumbai"
+                    placeholder="Enter name and complete address"
                     value={ecomMfr}
                     onChange={(e) => setEcomMfr(e.target.value)}
                   />
@@ -814,7 +814,7 @@ function NewInspectionForm() {
                   <textarea
                     className="input"
                     rows={2}
-                    placeholder="e.g. Audited from Zepto dark store Koramangala Hub, Bengaluru."
+                    placeholder="Enter inspection location, batch details, or field remarks"
                     value={ecomNotes}
                     onChange={(e) => setEcomNotes(e.target.value)}
                   />

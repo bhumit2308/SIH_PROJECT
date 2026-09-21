@@ -63,7 +63,7 @@ export default function VerifyPortalSearchPage() {
             <Search size={20} color="var(--text-muted)" style={{ marginLeft: '0.5rem' }} />
             <input
               type="text"
-              placeholder="Enter Notice Ref (e.g. LMPC/2026/DL-0891) or Inspection ID..."
+              placeholder="Enter Notice Reference or Inspection UUID..."
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               style={{ flex: 1, background: 'transparent', border: 'none', color: '#ffffff', fontSize: '0.95rem', outline: 'none', fontFamily: 'monospace' }}

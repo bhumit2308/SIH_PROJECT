@@ -11,8 +11,8 @@ import {
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('inspector.kiran@metra.gov.in');
-  const [password, setPassword] = useState('ValidK3y@Metra#2024');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -184,7 +184,7 @@ export default function LoginPage() {
                     onChange={e => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="inspector.id@metra.gov.in"
+                    placeholder="Enter official email address"
                     className="w-full px-3.5 py-2.5 rounded-lg bg-[#070b14] border border-[#1e293b] text-slate-100 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
                   />
                 </div>
@@ -207,7 +207,7 @@ export default function LoginPage() {
                     onChange={e => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    placeholder="••••••••••••"
+                    placeholder="Enter security password or key"
                     className="w-full px-3.5 py-2.5 rounded-lg bg-[#070b14] border border-[#1e293b] text-slate-100 text-sm font-mono tracking-wider focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600 pr-10"
                   />
                   <button

@@ -145,7 +145,7 @@ export default function ReportViolationPage() {
               <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Track Ticket: METRA-GRV-..."
+                placeholder="Enter Ticket ID (METRA-GRV-...)"
                 value={searchTicket}
                 onChange={(e) => setSearchTicket(e.target.value)}
                 style={{
@@ -334,7 +334,7 @@ export default function ReportViolationPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Amul Gold Pasteurized Milk 1L, Cadbury Celebrations"
+                  placeholder="Enter product or commodity name and brand"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   required
@@ -356,7 +356,7 @@ export default function ReportViolationPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Airport Transit Cafe, Blinkit, QuickMart Connaught Place"
+                  placeholder="Enter retail establishment, vendor, or platform name"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   style={{
@@ -379,7 +379,7 @@ export default function ReportViolationPage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Gate 14 Terminal 3 IGI Airport, New Delhi or https://blinkit.com/prn/..."
+                placeholder="Enter premise address, city, or product listing URL"
                 value={storeLocation}
                 onChange={(e) => setStoreLocation(e.target.value)}
                 style={{
@@ -401,7 +401,7 @@ export default function ReportViolationPage() {
               </label>
               <textarea
                 rows={3}
-                placeholder="Describe what occurred (e.g., printed MRP is ₹100 but vendor charged ₹140 on invoice, or sticker was pasted over the manufacturing date)."
+                placeholder="Provide specific details of the non-compliance observed (e.g. overcharging above MRP, missing declarations, obscured dates)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 style={{

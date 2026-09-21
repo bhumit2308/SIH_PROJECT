@@ -600,7 +600,7 @@ export default function ReportsLibraryPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. BHARATKOSH/2026/DL/88219"
+                  placeholder="Enter Bharatkosh challan or treasury reference number"
                   className="input"
                   value={challanNo}
                   onChange={(e) => setChallanNo(e.target.value)}
