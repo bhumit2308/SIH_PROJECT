@@ -369,6 +369,15 @@ export default function ReportsLibraryPage() {
                               <Eye size={12} /> Case
                             </button>
                           </Link>
+                          <Link href={`/verify/${encodeURIComponent(report.notice_ref || report.inspection_id)}`} target="_blank" rel="noopener noreferrer">
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}
+                              title="Open public verification portal"
+                            >
+                              <ExternalLink size={12} /> Verify
+                            </button>
+                          </Link>
                         </div>
                       </td>
                     </tr>

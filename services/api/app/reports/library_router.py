@@ -57,7 +57,7 @@ async def list_reports(
     from sqlalchemy.orm import selectinload
 
     user_roles = {ur.role.name.value for ur in current_user.user_roles}
-    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR"})
+    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR", "INSPECTOR"})
 
     query = (
         select(Report)
@@ -118,7 +118,7 @@ async def get_report_detail(
 
     # Access control: own report or admin/supervisor
     user_roles = {ur.role.name.value for ur in current_user.user_roles}
-    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR"})
+    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR", "INSPECTOR"})
     if not is_privileged and report.generated_by != current_user.id:
         raise HTTPException(403, {"code": "FORBIDDEN", "message": "Access denied."})
 
@@ -158,7 +158,7 @@ async def download_report(
 
     # Access control
     user_roles = {ur.role.name.value for ur in current_user.user_roles}
-    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR"})
+    is_privileged = bool(user_roles & {"ADMIN", "SUPERVISOR", "INSPECTOR"})
     if not is_privileged and report.generated_by != current_user.id:
         raise HTTPException(403, {"code": "FORBIDDEN", "message": "Access denied."})
 
