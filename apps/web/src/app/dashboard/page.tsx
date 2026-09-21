@@ -6,7 +6,7 @@ import {
   ClipboardList, CheckCircle2, AlertTriangle, Clock,
   Plus, ArrowRight, TrendingUp, Shield, Scale, Activity,
   Download, ShoppingBag, ExternalLink, RefreshCw, BarChart3,
-  FileCheck, ShieldAlert
+  FileCheck, ShieldAlert, Sparkles, Filter, ChevronRight
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -42,11 +42,31 @@ interface AnalyticsData {
   timestamp_utc: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  COMPLIANT:        { label: 'Compliant',       className: 'badge-success' },
-  NON_COMPLIANT:    { label: 'Non-Compliant',    className: 'badge-danger' },
-  REVIEW_REQUIRED:  { label: 'Review Required',  className: 'badge-warning' },
-  PENDING:          { label: 'Pending',          className: 'badge-muted' },
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  COMPLIANT: {
+    label: 'Statutory Pass',
+    bg: 'bg-emerald-950/60',
+    text: 'text-emerald-400',
+    border: 'border-emerald-800/40'
+  },
+  NON_COMPLIANT: {
+    label: 'Rule Violation',
+    bg: 'bg-rose-950/60',
+    text: 'text-rose-400',
+    border: 'border-rose-800/40'
+  },
+  REVIEW_REQUIRED: {
+    label: 'Officer Review',
+    bg: 'bg-amber-950/60',
+    text: 'text-amber-400',
+    border: 'border-amber-800/40'
+  },
+  PENDING: {
+    label: 'Analysis Pending',
+    bg: 'bg-slate-900',
+    text: 'text-slate-400',
+    border: 'border-slate-800'
+  },
 };
 
 export default function DashboardPage() {
@@ -85,7 +105,7 @@ export default function DashboardPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `METRA_Regulatory_Audit_${new Date().toISOString().slice(0,10)}.csv`;
+      a.download = `METRA_Statutory_Audit_${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -108,296 +128,311 @@ export default function DashboardPage() {
   const maxRuleCount = Math.max(...(data?.rule_violations?.map(r => r.count) || [1]), 1);
 
   return (
-    <>
-      {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="space-y-6">
+      {/* ── Page Header & Command Actions ── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-[#1e293b]">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 800 }}>
-              {greeting()}, {user?.full_name?.split(' ')[0] ?? 'Officer'} 👋
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              {greeting()}, {user?.full_name?.split(' ')[0] ?? 'Inspector'}
             </h1>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.55rem', borderRadius: '4px', background: 'rgba(99,102,241,0.15)', color: 'var(--accent-light)', border: '1px solid var(--border)' }}>
-              HQ COMMAND CENTER
+            <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              JURISDICTION: DL-CENTRAL
             </span>
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.825rem' }}>
-            National Legal Metrology Statutory Registry & Enforcement Hub
+          <p className="text-xs text-slate-400 mt-1">
+            National Legal Metrology Enforcement Registry · Statutory Surveillance Hub
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="flex items-center flex-wrap gap-2.5">
+          <button
+            onClick={fetchAnalytics}
+            className="p-2 rounded-lg bg-[#0e1628] hover:bg-[#131d33] border border-[#1e293b] text-slate-400 hover:text-white transition-all text-xs"
+            title="Refresh Ledger"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          </button>
+
           <button
             onClick={handleExportCsv}
             disabled={exporting}
-            className="btn btn-ghost"
-            style={{ fontSize: '0.825rem', padding: '0.5rem 0.9rem' }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0e1628] hover:bg-[#131d33] border border-[#1e293b] text-slate-300 hover:text-white transition-all text-xs font-medium"
           >
-            <Download size={15} /> {exporting ? 'Exporting...' : 'Ministerial CSV'}
+            <Download size={14} />
+            <span>{exporting ? 'Generating…' : 'Ministerial CSV'}</span>
           </button>
-          <Link href="/dashboard/inspections/new?tab=ecommerce">
-            <button className="btn btn-ghost" style={{ fontSize: '0.825rem', padding: '0.5rem 0.9rem', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}>
-              <ShoppingBag size={15} /> Audit E-Commerce
-            </button>
+
+          <Link
+            href="/dashboard/inspections/new?tab=ecommerce"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800/40 text-amber-300 transition-all text-xs font-medium"
+          >
+            <ShoppingBag size={14} />
+            <span>Audit E-Commerce</span>
           </Link>
-          <Link href="/dashboard/inspections/new">
-            <button className="btn btn-primary" style={{ fontSize: '0.825rem', padding: '0.5rem 1rem' }}>
-              <Plus size={16} /> New Inspection
-            </button>
+
+          <Link
+            href="/dashboard/inspections/new"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20"
+          >
+            <Plus size={15} />
+            <span>New Inspection</span>
           </Link>
         </div>
       </div>
 
-      <div className="page-body animate-fade">
-        {/* KPI Executive Summary Cards */}
-        <div className="grid-4" style={{ marginBottom: '1.5rem' }}>
-          {/* Total Inspections */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Total Inspections
-              </span>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ClipboardList size={16} color="var(--accent-light)" />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff' }}>
-              {loading ? '—' : kpis?.total_inspections ?? 0}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <span>{kpis?.reports_issued ?? 0} Statutory Certificates Issued</span>
+      {/* ── 4-Column Enterprise KPI Grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Inspections */}
+        <div className="p-4 rounded-xl bg-[#0c1322] border border-[#1e293b] hover:border-slate-700 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400 uppercase tracking-wider">
+            <span>Total Audits</span>
+            <div className="p-1.5 rounded-md bg-indigo-950/60 border border-indigo-800/40 text-indigo-400">
+              <ClipboardList size={15} />
             </div>
           </div>
-
-          {/* Statutory Compliance Rate */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Compliance Rate
-              </span>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckCircle2 size={16} color="var(--success)" />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#4ade80' }}>
-              {loading ? '—' : `${kpis?.compliance_rate ?? 100}%`}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {kpis?.compliant_count ?? 0} Compliant / {kpis?.violations_count ?? 0} Violations
-            </div>
+          <div className="text-2xl font-bold font-mono text-white">
+            {loading ? '—' : (kpis?.total_inspections ?? 0)}
           </div>
-
-          {/* Section 48 Compounding Pipeline */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Compounding Pipeline
-              </span>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Scale size={16} color="var(--danger)" />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f87171' }}>
-              {loading ? '—' : `₹${(kpis?.compounding_pipeline_inr ?? 0).toLocaleString('en-IN')}`}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Section 48 compounding fee assessment
-            </div>
-          </div>
-
-          {/* Pending Reviews / Grievances */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Pending Review
-              </span>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Clock size={16} color="var(--warning)" />
-              </div>
-            </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fbbf24' }}>
-              {loading ? '—' : (kpis?.review_required_count ?? 0) + (kpis?.pending_count ?? 0)}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <Link href="/dashboard/reviews" style={{ color: 'var(--accent-light)', textDecoration: 'none' }}>
-                Open Officer Queue →
-              </Link>
-            </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-[#1e293b]/60">
+            <span>Certificates Issued:</span>
+            <span className="font-mono text-slate-200 font-semibold">{kpis?.reports_issued ?? 0}</span>
           </div>
         </div>
 
-        {/* Analytics Breakdown Grid (2 columns) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          {/* Infractions by Legal Metrology Rule */}
-          <div className="card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+        {/* Card 2: Compliance Rate */}
+        <div className="p-4 rounded-xl bg-[#0c1322] border border-[#1e293b] hover:border-slate-700 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400 uppercase tracking-wider">
+            <span>Compliance Rate</span>
+            <div className="p-1.5 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
+              <CheckCircle2 size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold font-mono text-emerald-400">
+            {loading ? '—' : `${kpis?.compliance_rate ?? 100}%`}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-[#1e293b]/60">
+            <span>Passed / Violations:</span>
+            <span className="font-mono text-slate-200 font-semibold">{kpis?.compliant_count ?? 0} / {kpis?.violations_count ?? 0}</span>
+          </div>
+        </div>
+
+        {/* Card 3: Compounding Pipeline */}
+        <div className="p-4 rounded-xl bg-[#0c1322] border border-[#1e293b] hover:border-slate-700 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400 uppercase tracking-wider">
+            <span>§48 Compounding</span>
+            <div className="p-1.5 rounded-md bg-rose-950/60 border border-rose-800/40 text-rose-400">
+              <Scale size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold font-mono text-rose-400">
+            {loading ? '—' : `₹${(kpis?.compounding_pipeline_inr ?? 0).toLocaleString('en-IN')}`}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-[#1e293b]/60">
+            <span>Statutory Penalties:</span>
+            <span className="font-mono text-rose-300 font-semibold">{kpis?.violations_count ?? 0} Active Notices</span>
+          </div>
+        </div>
+
+        {/* Card 4: Action Queue */}
+        <div className="p-4 rounded-xl bg-[#0c1322] border border-[#1e293b] hover:border-slate-700 transition-all space-y-2">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400 uppercase tracking-wider">
+            <span>Action Queue</span>
+            <div className="p-1.5 rounded-md bg-amber-950/60 border border-amber-800/40 text-amber-400">
+              <Clock size={15} />
+            </div>
+          </div>
+          <div className="text-2xl font-bold font-mono text-amber-400">
+            {loading ? '—' : ((kpis?.review_required_count ?? 0) + (kpis?.pending_count ?? 0))}
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-[#1e293b]/60">
+            <Link href="/dashboard/reviews" className="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+              Open Officer Queue <ChevronRight size={12} />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Middle Two-Column Analytical Deep-Dive ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Infractions by LMPC Rule 2011 */}
+        <div className="lg:col-span-7 p-5 rounded-xl bg-[#0c1322] border border-[#1e293b] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#1e293b]">
+            <div>
+              <h2 className="text-sm font-bold text-white tracking-wide">
+                Infractions by Statutory Rule
+              </h2>
+              <p className="text-[11px] text-slate-400 font-mono">
+                Legal Metrology (Packaged Commodities) Rules, 2011
+              </p>
+            </div>
+            <BarChart3 size={16} className="text-indigo-400" />
+          </div>
+
+          <div className="space-y-3">
+            {data?.rule_violations && data.rule_violations.length > 0 ? (
+              data.rule_violations.map((rule, idx) => {
+                const pct = Math.round((rule.count / maxRuleCount) * 100);
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-slate-300">{rule.rule_name}</span>
+                      <span className="font-mono text-xs font-semibold text-rose-400">
+                        {rule.count} {rule.count === 1 ? 'case' : 'cases'}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-[#131d33] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-500 transition-all duration-500"
+                        style={{ width: `${Math.max(pct, 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-500 font-mono">
+                No active statutory infractions recorded in current window.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Channel Surveillance & Distribution */}
+        <div className="lg:col-span-5 p-5 rounded-xl bg-[#0c1322] border border-[#1e293b] flex flex-col justify-between space-y-4">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-[#1e293b]">
               <div>
-                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                  Infractions by Statutory Rule
+                <h2 className="text-sm font-bold text-white tracking-wide">
+                  Surveillance Channels
                 </h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                  Frequency distribution under Packaged Commodities Rules, 2011
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Physical Retail vs E-Commerce Marketplaces
                 </p>
               </div>
-              <BarChart3 size={18} color="var(--accent-light)" />
+              <Activity size={16} className="text-emerald-400" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {data?.rule_violations && data.rule_violations.length > 0 ? (
-                data.rule_violations.map((rule, idx) => {
-                  const pct = Math.round((rule.count / maxRuleCount) * 100);
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              <div className="p-3 rounded-lg bg-[#070b14] border border-[#1e293b]">
+                <div className="text-[10px] uppercase font-mono text-slate-400">Physical Retail</div>
+                <div className="text-lg font-bold font-mono text-white mt-0.5">
+                  {data?.mode_distribution?.physical_retail ?? 0}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-[#070b14] border border-[#1e293b]">
+                <div className="text-[10px] uppercase font-mono text-amber-400">E-Commerce</div>
+                <div className="text-lg font-bold font-mono text-amber-300 mt-0.5">
+                  {data?.mode_distribution?.ecommerce_audit ?? 0}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-[#070b14] border border-[#1e293b]">
+                <div className="text-[10px] uppercase font-mono text-indigo-400">Pre-Screen</div>
+                <div className="text-lg font-bold font-mono text-indigo-300 mt-0.5">
+                  {data?.mode_distribution?.pre_screening ?? 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-[#070b14] border border-[#1e293b] flex items-center justify-between text-xs">
+            <div>
+              <div className="font-semibold text-slate-200">Public Verification Node</div>
+              <div className="text-[11px] text-slate-400">Check notice hashes and certificates</div>
+            </div>
+            <Link
+              href="/verify"
+              className="px-2.5 py-1.5 rounded-md bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-medium text-xs flex items-center gap-1 transition-all"
+            >
+              <span>Verify</span>
+              <ExternalLink size={12} />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bottom Dense Inspection Ledger Table ── */}
+      <div className="p-5 rounded-xl bg-[#0c1322] border border-[#1e293b] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-[#1e293b]">
+          <div>
+            <h2 className="text-sm font-bold text-white tracking-wide">
+              Recent Inspection Determinations
+            </h2>
+            <p className="text-[11px] text-slate-400 font-mono">
+              Live ledger of automated OCR evaluations & field seizure records
+            </p>
+          </div>
+          <Link
+            href="/dashboard/inspections"
+            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+          >
+            <span>View All Records</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[#1e293b] text-slate-400 uppercase font-mono text-[10px] tracking-wider">
+                <th className="py-2.5 px-3">Packaged Commodity</th>
+                <th className="py-2.5 px-3">Category</th>
+                <th className="py-2.5 px-3">Channel</th>
+                <th className="py-2.5 px-3">Statutory Finding</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1e293b]/50">
+              {data?.recent_inspections && data.recent_inspections.length > 0 ? (
+                data.recent_inspections.map(insp => {
+                  const cfg = STATUS_CONFIG[insp.final_status] ?? {
+                    label: insp.final_status,
+                    bg: 'bg-slate-900',
+                    text: 'text-slate-400',
+                    border: 'border-slate-800'
+                  };
                   return (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{rule.rule_name}</span>
-                        <span style={{ color: rule.count > 0 ? '#f87171' : 'var(--text-muted)', fontWeight: 700 }}>
-                          {rule.count} {rule.count === 1 ? 'violation' : 'violations'}
+                    <tr key={insp.id} className="hover:bg-[#11192e] transition-colors">
+                      <td className="py-3 px-3 font-medium text-slate-200">
+                        <Link href={`/dashboard/inspections/${insp.id}`} className="hover:text-indigo-400">
+                          {insp.product_name || 'Packaged Good'}
+                        </Link>
+                      </td>
+                      <td className="py-3 px-3 text-slate-400">{insp.category || 'General'}</td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-slate-400">
+                        {insp.mode === 'ECOMMERCE_AUDIT' ? 'E-Commerce' : 'Physical Retail'}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                          {cfg.label}
                         </span>
-                      </div>
-                      <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: rule.count > 0 ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'var(--border)', borderRadius: '3px' }} />
-                      </div>
-                    </div>
+                      </td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-slate-400">
+                        {new Date(insp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <Link
+                          href={`/dashboard/inspections/${insp.id}`}
+                          className="px-2 py-1 rounded bg-[#131d33] hover:bg-indigo-600/30 border border-[#1e293b] hover:border-indigo-500/40 text-slate-300 hover:text-indigo-300 transition-all font-mono text-[11px]"
+                        >
+                          Review →
+                        </Link>
+                      </td>
+                    </tr>
                   );
                 })
               ) : (
-                <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  No active statutory violations recorded.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Channel Enforcement & Quick Actions */}
-          <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                    Channel Distribution & Enforceability
-                  </h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                    Physical Retail vs Quick-Commerce / E-Commerce Audits
-                  </p>
-                </div>
-                <Activity size={18} color="#10b981" />
-              </div>
-
-              <div className="grid-3" style={{ gap: '0.75rem', marginBottom: '1.2rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Physical Retail</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff' }}>
-                    {data?.mode_distribution?.physical_retail ?? 0}
-                  </span>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>E-Commerce Audits</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fbbf24' }}>
-                    {data?.mode_distribution?.ecommerce_audit ?? 0}
-                  </span>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Pre-Screening</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#818cf8' }}>
-                    {data?.mode_distribution?.pre_screening ?? 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Statutory Quick Links */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(15,23,42,0.6)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Public Verification Portal
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-                  Verify any issued statutory certificate or notice reference:
-                </span>
-                <Link href="/verify" style={{ fontSize: '0.8rem', color: 'var(--accent-light)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 600 }}>
-                  Open Portal <ExternalLink size={13} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Inspections Table */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-            <div>
-              <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                Recent Inspections & Section 15 Determinations
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                Real-time ledger of automated packaging inspections and field audits
-              </p>
-            </div>
-            <Link href="/dashboard/inspections" style={{ fontSize: '0.8rem', color: 'var(--accent-light)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
-              View All Inspections <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '0.6rem 0.75rem' }}>Product Name</th>
-                  <th style={{ padding: '0.6rem 0.75rem' }}>Category</th>
-                  <th style={{ padding: '0.6rem 0.75rem' }}>Mode</th>
-                  <th style={{ padding: '0.6rem 0.75rem' }}>Determination</th>
-                  <th style={{ padding: '0.6rem 0.75rem' }}>Date</th>
-                  <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Action</th>
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-xs text-slate-500 font-mono">
+                    No recent inspections recorded in database.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {data?.recent_inspections && data.recent_inspections.length > 0 ? (
-                  data.recent_inspections.map((insp) => {
-                    const cfg = STATUS_CONFIG[insp.final_status] ?? { label: insp.final_status, className: 'badge-muted' };
-                    return (
-                      <tr key={insp.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '0.85rem 0.75rem', fontWeight: 600, color: '#f1f5f9' }}>
-                          <Link href={`/dashboard/inspections/${insp.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                            {insp.product_name || 'Packaged Commodity'}
-                          </Link>
-                        </td>
-                        <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-secondary)' }}>
-                          {insp.category || 'Standard'}
-                        </td>
-                        <td style={{ padding: '0.85rem 0.75rem' }}>
-                          <span style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
-                            {insp.mode === 'ECOMMERCE_AUDIT' ? 'E-Commerce' : 'Physical'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.85rem 0.75rem' }}>
-                          <span className={`badge ${cfg.className}`} style={{ fontSize: '0.75rem' }}>
-                            {cfg.label}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.85rem 0.75rem', color: 'var(--text-muted)' }}>
-                          {new Date(insp.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                        </td>
-                        <td style={{ padding: '0.85rem 0.75rem', textAlign: 'right' }}>
-                          <Link href={`/dashboard/inspections/${insp.id}`}>
-                            <button className="btn btn-ghost" style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}>
-                              Details →
-                            </button>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                      No inspections found in database.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-    </>
+    </div>
   );
 }
